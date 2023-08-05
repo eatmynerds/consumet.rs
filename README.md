@@ -18,7 +18,7 @@ Credits to the beautiful people who wrote the original api consumet
       <img src="https://img.shields.io/discord/987492554486452315?color=7289da&label=discord&logo=discord&logoColor=7289da" alt="Official Discord">
     </a>
     <a href="https://github.com/consumet-rs/consumet.rs/blob/main/LICENSE">
-      <img src="https://img.shields.io/crates/l/consumet-api-rs.svg">
+      <img src="https://img.shields.io/crates/l/consumet-rs.svg">
     </a>
 </p>
 
