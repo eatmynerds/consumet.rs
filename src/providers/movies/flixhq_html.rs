@@ -1,5 +1,5 @@
 use crate::models::types::{IEpisodeServer, IMovieEpisode, TvType};
-u);se visdom::{types::Elements, Vis};
+use visdom::{types::Elements, Vis};
 
 pub fn create_html_fragment(page_html: &str) -> Elements<'_> {
     Vis::load(page_html).unwrap()
@@ -76,6 +76,7 @@ impl<'page, 'b> Search<'page, 'b> {
         match self.id.split('/').next() {
             Some("tv") => Some(TvType::TvSeries),
             Some("movie") => Some(TvType::Movie),
+            _ => None
         }
     }
 }
