@@ -152,8 +152,8 @@ pub struct IAnimeEpisode {
 /// Contains Episode Server Info
 #[derive(Debug, Deserialize, Serialize)]
 pub struct IEpisodeServer {
-    pub name: String,
-    pub url: String,
+    pub name: Option<String>,
+    pub url: Option<String>,
 }
 
 /// Contains Video Sources
@@ -507,6 +507,7 @@ pub struct IMovieInfo {
     pub description: Option<String>,
     pub rating: Option<String>,
     pub status: Option<MediaStatus>,
+    pub quality: Option<String>,
     pub duration: Option<String>,
     pub country: Option<Vec<String>>,
     pub production: Option<Vec<String>>,

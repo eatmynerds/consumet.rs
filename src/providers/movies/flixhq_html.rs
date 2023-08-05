@@ -1,12 +1,12 @@
 use crate::models::types::{IEpisodeServer, IMovieEpisode, TvType};
-use visdom::{types::Elements, Vis};
+u);se visdom::{types::Elements, Vis};
 
 pub fn create_html_fragment(page_html: &str) -> Elements<'_> {
     Vis::load(page_html).unwrap()
 }
 
 pub struct Page<'a> {
-    pub elements: Elements<'a>
+    pub elements: Elements<'a>,
 }
 
 impl<'a> Page<'a> {
@@ -17,8 +17,7 @@ impl<'a> Page<'a> {
     }
 
     pub fn total_pages(&self) -> Option<usize> {
-        self.elements
-        .find("div.pre-pagination:nth-child(3) > nav:nth-child(1) > ul:nth-child(1) > li.page-item:last-child a").attr("href")?
+        self.elements .find("div.pre-pagination:nth-child(3) > nav:nth-child(1) > ul:nth-child(1) > li.page-item:last-child a").attr("href")?
         .to_string()
         .rsplit('=')
         .next()?
@@ -39,11 +38,11 @@ impl<'a> Page<'a> {
 #[derive(Clone, Copy)]
 pub struct Search<'page, 'b> {
     pub elements: &'b Elements<'page>,
-    pub id: &'b str
+    pub id: &'b str,
 }
 
 impl<'page, 'b> Search<'page, 'b> {
-    pub fn search_image(self) -> Option<String> {
+    pub fn search_image(&self) -> Option<String> {
         Some(
             self.elements
                 .find("div.m_i-d-poster > div > img")
@@ -52,7 +51,7 @@ impl<'page, 'b> Search<'page, 'b> {
         )
     }
 
-    pub fn search_title(self) -> String {
+    pub fn search_title(&self) -> String {
         self.elements
         .find(
             "#main-wrapper > div.movie_information > div > div.m_i-detail > div.m_i-d-content > h2",
@@ -62,7 +61,7 @@ impl<'page, 'b> Search<'page, 'b> {
         .to_owned()
     }
 
-    pub fn search_cover(self) -> Option<String> {
+    pub fn search_cover(&self) -> Option<String> {
         Some(
             self.elements
                 .find("div.w_b-cover")
@@ -73,11 +72,10 @@ impl<'page, 'b> Search<'page, 'b> {
         )
     }
 
-    pub fn search_media_type(self) -> Option<TvType> {
+    pub fn search_media_type(&self) -> Option<TvType> {
         match self.id.split('/').next() {
             Some("tv") => Some(TvType::TvSeries),
             Some("movie") => Some(TvType::Movie),
-            _ => None,
         }
     }
 }
@@ -104,6 +102,16 @@ impl<'page, 'b> Info<'page, 'b> {
 
     pub fn info_description(&self) -> Option<String> {
         Some(self.elements.find("#main-wrapper > div.movie_information > div > div.m_i-detail > div.m_i-d-content > div.description").text().trim().to_owned())
+    }
+
+    pub fn info_quality(&self) -> Option<String> {
+        Some(
+            self.elements
+                .find("span.item:nth-child(1)")
+                .text()
+                .trim()
+                .to_owned(),
+        )
     }
 
     pub fn info_rating(&self) -> Option<String> {
@@ -212,31 +220,24 @@ pub struct Server<'a> {
 }
 
 impl<'a> Server<'a> {
-    pub fn parse_server_html(
-        &self,
-        base_url: &str,
-        media_id: &str,
-    ) -> anyhow::Result<Vec<IEpisodeServer>> {
-        let servers: Vec<IEpisodeServer> = self.element.find("ul > li > a").map(|_, element| {
+    pub fn parse_server_html(&self, base_url: &str, media_id: &str) -> Vec<Option<IEpisodeServer>> {
+        self.element.find("ul > li > a").map(|_, element| {
             let id = element
                 .get_attribute("id")
-                .unwrap()
-                .to_string()
-                .replace("watch-", "");
+                .map(|value| value.to_string().replace("watch-", ""));
 
             let name = element
                 .get_attribute("title")
-                .unwrap()
-                .to_string()
-                .trim_start_matches("Server ")
-                .to_owned();
+                .map(|value| value.to_string().trim_start_matches("Server ").to_owned());
 
-            let url = format!("{}/watch-{}.{}", base_url, media_id, id);
+            let url: Option<String> = if let Some(id) = id {
+                Some(format!("{}/watch-{}.{}", base_url, media_id, id))
+            } else {
+                None
+            };
 
-            IEpisodeServer { name, url }
-        });
-
-        Ok(servers)
+            Some(IEpisodeServer { name, url })
+        })
     }
 }
 

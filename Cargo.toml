@@ -1,6 +1,6 @@
 [package]
-name = "consumet-api-rs"
-version = "0.2.2"
+name = "consumet-rs"
+version = "0.0.1"
 edition = "2021"
 description = "Consumet API RIIR"
 license-file = "LICENSE"

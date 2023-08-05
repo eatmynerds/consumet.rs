@@ -84,6 +84,63 @@ impl FlixHQ {
         }
     }
 
+    pub(crate) fn info_page(&self, info_html: String, search_result: IMovieResult) -> FlixHQInfo {
+        let fragment = create_html_fragment(&info_html);
+
+        let info_parser = Info {
+            elements: &fragment,
+        };
+
+        FlixHQInfo {
+            base: search_result,
+            info: IMovieInfo {
+                genres: Some(info_parser.info_label(2, "Genre:")),
+                description: info_parser.info_description(),
+                quality: info_parser.info_quality(),
+                rating: info_parser.info_rating(),
+                status: None,
+                duration: info_parser.info_duration(),
+                country: Some(info_parser.info_label(1, "Country:")),
+                production: Some(info_parser.info_label(4, "Production:")),
+                casts: Some(info_parser.info_label(5, "Casts:")),
+                tags: Some(info_parser.info_label(6, "Tags:")),
+                total_episodes: None,
+                seasons: None,
+                episodes: None,
+            },
+        }
+    }
+
+    pub(crate) fn info_season(&self, season_html: String) -> Vec<String> {
+        let fragment = create_html_fragment(&season_html);
+
+        let season_parser = Seasons { elements: fragment };
+
+        season_parser
+            .season_results()
+            .into_iter()
+            .flatten()
+            .collect()
+    }
+
+    pub(crate) fn info_episode(&self, episode_html: String, index: usize) -> Episodes {
+        let fragment = create_html_fragment(&episode_html);
+
+        Episodes::episode_results(fragment, self.base_url(), index)
+    }
+
+    pub(crate) fn info_server(&self, server_html: String, media_id: &str) -> Vec<IEpisodeServer> {
+        let fragment = create_html_fragment(&server_html);
+
+        let server_parser = Server { element: fragment };
+
+        server_parser
+            .parse_server_html(self.base_url(), media_id)
+            .into_iter()
+            .flatten()
+            .collect()
+    }
+
     pub async fn search(
         &self,
         query: &str,
@@ -126,7 +183,7 @@ impl FlixHQ {
     /// Returns a future which resolves into an movie result object (*[`impl Future<Output = Result<IMovieResult>>`](https://github.com/carrotshniper21/consumet-api-rs/blob/main/src/models/types.rs#L452-L462)*)\
     /// # Parameters
     /// * `id` - the id of a movie or show
-    async fn fetch_search_result(&self, id: &str) -> anyhow::Result<IMovieResult> {
+    pub async fn fetch_search_result(&self, id: &str) -> anyhow::Result<IMovieResult> {
         let url = format!("{}/{}", self.base_url(), id);
 
         let media_html = reqwest::Client::new()
@@ -155,29 +212,7 @@ impl FlixHQ {
             .text()
             .await?;
 
-        let fragment = create_html_fragment(&info_html);
-
-        let info_parser = Info {
-            elements: &fragment,
-        };
-
-        let info = FlixHQInfo {
-            base: search_result,
-            info: IMovieInfo {
-                genres: Some(info_parser.info_label(2, "Genre:")),
-                description: info_parser.info_description(),
-                rating: info_parser.info_rating(),
-                status: None,
-                duration: info_parser.info_duration(),
-                country: Some(info_parser.info_label(1, "Country:")),
-                production: Some(info_parser.info_label(4, "Production:")),
-                casts: Some(info_parser.info_label(5, "Casts:")),
-                tags: Some(info_parser.info_label(6, "Tags:")),
-                total_episodes: None,
-                seasons: None,
-                episodes: None,
-            },
-        };
+        let info = self.info_page(info_html, search_result);
 
         if is_seasons {
             let id = media_id.split('-').last().unwrap_or_default().to_owned();
@@ -189,15 +224,7 @@ impl FlixHQ {
                 .text()
                 .await?;
 
-            let fragment = create_html_fragment(&season_html);
-
-            let season_parser = Seasons { elements: fragment };
-
-            let season_ids: Vec<String> = season_parser
-                .season_results()
-                .into_iter()
-                .flatten()
-                .collect();
+            let season_ids = self.info_season(season_html);
 
             let mut seasons_and_episodes: Vec<Vec<IMovieEpisode>> = vec![];
 
@@ -213,10 +240,7 @@ impl FlixHQ {
                     .text()
                     .await?;
 
-                let fragment = create_html_fragment(&episode_html);
-
-                let episodes = Episodes::episode_results(fragment, self.base_url(), i);
-
+                let episodes = self.info_episode(episode_html, i);
                 seasons_and_episodes.push(episodes.episodes);
             }
 
@@ -280,11 +304,7 @@ impl FlixHQ {
             .text()
             .await?;
 
-        let fragment = create_html_fragment(&server_html);
-
-        let server_parser = Server { element: fragment };
-
-        let servers = server_parser.parse_server_html(self.base_url(), media_id)?;
+        let servers = self.info_server(server_html, media_id);
 
         Ok(servers)
     }
@@ -300,16 +320,25 @@ impl FlixHQ {
         media_id: &str,
         server: Option<StreamingServers>,
     ) -> anyhow::Result<ISource> {
-        let server = server.unwrap_or(StreamingServers::UpCloud);
+        let server: StreamingServers = server.unwrap_or(StreamingServers::UpCloud);
         let servers = self.servers(episode_id, media_id).await?;
 
-        let i = servers
+        let i = match servers
             .iter()
-            .position(|s| s.name == server.to_string())
-            .expect(&format!("Server {server} not found"));
+            .position(|s| s.name == Some(server.to_string()))
+        {
+            Some(index) => index,
+            None => 0,
+        };
 
-        let parts: Vec<&str> = servers[i].url.split('.').collect();
-        let server_id = parts.last().copied().expect("Server id is None");
+        let parts = servers[i].url.clone().unwrap_or_default();
+
+        let server_id: &str = parts
+            .split('.')
+            .collect::<Vec<_>>()
+            .last()
+            .copied()
+            .unwrap_or_default();
 
         let server_json = reqwest::Client::new()
             .get(format!("{}/ajax/get_link/{}", self.base_url(), server_id))
@@ -320,101 +349,97 @@ impl FlixHQ {
 
         let server_info: FlixHQServerInfo = serde_json::from_str(&server_json)?;
 
-        if server_info.link.starts_with("http") {
-            match server {
-                StreamingServers::MixDrop => {
-                    let mut mix_drop = MixDrop {
-                        sources: vec![],
-                        subtitles: vec![],
-                    };
+        match server {
+            StreamingServers::MixDrop => {
+                let mut mix_drop = MixDrop {
+                    sources: vec![],
+                    subtitles: vec![],
+                };
 
-                    mix_drop
-                        .extract(
-                            server_info.link.clone(),
-                            ExtractConfig {
-                                ..Default::default()
-                            },
-                        )
-                        .await?;
+                mix_drop
+                    .extract(
+                        server_info.link.clone(),
+                        ExtractConfig {
+                            ..Default::default()
+                        },
+                    )
+                    .await?;
 
-                    Ok(ISource {
-                        sources: Some(mix_drop.sources),
-                        subtitles: Some(mix_drop.subtitles),
-                        headers: Some(server_info.link),
-                        intro: None,
-                    })
-                }
-                StreamingServers::VidCloud => {
-                    let mut vid_cloud = VidCloud {
-                        sources: vec![],
-                        subtitles: vec![],
-                    };
-
-                    vid_cloud
-                        .extract(
-                            server_info.link.clone(),
-                            ExtractConfig {
-                                is_alternative: Some(true),
-                                ..Default::default()
-                            },
-                        )
-                        .await?;
-
-                    Ok(ISource {
-                        sources: Some(vid_cloud.sources),
-                        subtitles: Some(vid_cloud.subtitles),
-                        headers: Some(server_info.link),
-                        intro: None,
-                    })
-                }
-                StreamingServers::UpCloud => {
-                    let mut vid_cloud = VidCloud {
-                        sources: vec![],
-                        subtitles: vec![],
-                    };
-
-                    vid_cloud
-                        .extract(
-                            server_info.link.clone(),
-                            ExtractConfig {
-                                ..Default::default()
-                            },
-                        )
-                        .await?;
-
-                    Ok(ISource {
-                        sources: Some(vid_cloud.sources),
-                        subtitles: Some(vid_cloud.subtitles),
-                        headers: Some(server_info.link),
-                        intro: None,
-                    })
-                }
-                _ => {
-                    let mut vid_cloud = VidCloud {
-                        sources: vec![],
-                        subtitles: vec![],
-                    };
-
-                    vid_cloud
-                        .extract(
-                            server_info.link.clone(),
-                            ExtractConfig {
-                                is_alternative: Some(false),
-                                ..Default::default()
-                            },
-                        )
-                        .await?;
-
-                    Ok(ISource {
-                        sources: Some(vid_cloud.sources),
-                        subtitles: Some(vid_cloud.subtitles),
-                        headers: Some(server_info.link),
-                        intro: None,
-                    })
-                }
+                Ok(ISource {
+                    sources: Some(mix_drop.sources),
+                    subtitles: Some(mix_drop.subtitles),
+                    headers: Some(server_info.link),
+                    intro: None,
+                })
             }
-        } else {
-            Err(anyhow::anyhow!("Incorrect server url. Try Again."))
+            StreamingServers::VidCloud => {
+                let mut vid_cloud = VidCloud {
+                    sources: vec![],
+                    subtitles: vec![],
+                };
+
+                vid_cloud
+                    .extract(
+                        server_info.link.clone(),
+                        ExtractConfig {
+                            is_alternative: Some(true),
+                            ..Default::default()
+                        },
+                    )
+                    .await?;
+
+                Ok(ISource {
+                    sources: Some(vid_cloud.sources),
+                    subtitles: Some(vid_cloud.subtitles),
+                    headers: Some(server_info.link),
+                    intro: None,
+                })
+            }
+            StreamingServers::UpCloud => {
+                let mut vid_cloud = VidCloud {
+                    sources: vec![],
+                    subtitles: vec![],
+                };
+
+                vid_cloud
+                    .extract(
+                        server_info.link.clone(),
+                        ExtractConfig {
+                            ..Default::default()
+                        },
+                    )
+                    .await?;
+
+                Ok(ISource {
+                    sources: Some(vid_cloud.sources),
+                    subtitles: Some(vid_cloud.subtitles),
+                    headers: Some(server_info.link),
+                    intro: None,
+                })
+            }
+            _ => {
+                let mut vid_cloud = VidCloud {
+                    sources: vec![],
+                    subtitles: vec![],
+                };
+
+                vid_cloud
+                    .extract(
+                        server_info.link.clone(),
+                        ExtractConfig {
+                            is_alternative: Some(false),
+                            ..Default::default()
+                        },
+                    )
+                    .await?;
+
+                Ok(ISource {
+                    sources: Some(vid_cloud.sources),
+                    subtitles: Some(vid_cloud.subtitles),
+                    headers: Some(server_info.link),
+                    intro: None,
+                })
+            }
         }
     }
 
