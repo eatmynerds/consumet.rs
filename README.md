@@ -38,14 +38,14 @@ Credits to the beautiful people who wrote the original api consumet
 
 To use consumet-api-rs in your project, run:
 ```bash
-cargo install consumet-api-rs
+cargo install consumet-rs
 ```
 
 ### Usage
 
 **Example** - searching for a movie using the flixhq provider.
 ```rs
-use consumet_api_rs::providers::movies;
+use consumet_rs::providers::movies;
 
 // Create a new instance of the FlixHQ provider
 let flixhq = movies::FlixHQ;
@@ -54,7 +54,7 @@ let data = flixhq.search("Vincenzo", None).await?;
 println!("{:#?}", data);
 ```
 
-Do you want to know more? Head to the [`Getting Started`](https://github.com/carrotshniper21/consumet-api-rs/tree/main/docs/guides/getting-started.md).
+Do you want to know more? Head to the [`Getting Started`](https://github.com/consumet-rs/consumet.rs/tree/main/docs/guides/getting-started.md).
 
 ## Documentation
 - [`Getting Started`](https://github.com/consumet-rs/consumet.rs/tree/main/docs/guides/getting-started.md)

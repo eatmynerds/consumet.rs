@@ -1,8 +1,8 @@
-<h1 align="center">consumet-api-rs</h1>
+<h1 align="center">consumet.rs</h1>
 
 ## Getting Started
 
-Hello! Thank you for checking out consumet-api-rs!
+Hello! Thank you for checking out consumet.rs!
 
 This document aims to be a gentle introduction to the library and its usage.
 
@@ -11,13 +11,13 @@ Let's start!
 ### Installation
 Install with cargo:
 ```sh
-cargo add consumet-api-rs
+cargo add consumet-rs
 ```
 ### Usage
 
 **Example** - searching for a film using the flixhq provider.
 ```rust
-use consumet_api_rs::providers::movies;
+use consumet_rs::providers::movies;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
