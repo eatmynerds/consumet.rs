@@ -1,8 +1,8 @@
 <p align="center"><img src="https://consumet.org/images/consumetlogo.png" width="175"/></p>
 
-<h1 align="center"> consumet-api-rs </h1>
+<h1 align="center"> consumet.rs </h1>
 
-consumet-api-rs is a crates.io library which provides high-level APIs to get information about several entertainment mediums like books, movies, comics, anime, manga, etc.
+consumet.rs is a crates.io library which provides high-level APIs to get information about several entertainment mediums like books, movies, comics, anime, manga, etc.
 
 Checkout the original [`consumet.ts`](https://github.com/consumet/consumet.ts/)
 
@@ -17,7 +17,7 @@ Credits to the beautiful people who wrote the original api consumet
     <a href="https://discord.gg/qTPfvMxzNH">
       <img src="https://img.shields.io/discord/987492554486452315?color=7289da&label=discord&logo=discord&logoColor=7289da" alt="Official Discord">
     </a>
-    <a href="https://github.com/carrotshniper21/consumet-api-rs/blob/main/LICENSE">
+    <a href="https://github.com/consumet-rs/consumet.rs/blob/main/LICENSE">
       <img src="https://img.shields.io/crates/l/consumet-api-rs.svg">
     </a>
 </p>
@@ -57,9 +57,9 @@ println!("{:#?}", data);
 Do you want to know more? Head to the [`Getting Started`](https://github.com/carrotshniper21/consumet-api-rs/tree/main/docs/guides/getting-started.md).
 
 ## Documentation
-- [`Getting Started`](https://github.com/carrotshniper21/consumet-api-rs/tree/main/docs/guides/getting-started.md)
-- [`Guides`](https://github.com/carrotshniper21/consumet-api-rs/tree/main/docs)
-- [`Movies`](https://github.com/carrotshniper21/consumet-api-rs/tree/main/docs/guides/movies.md)
+- [`Getting Started`](https://github.com/consumet-rs/consumet.rs/tree/main/docs/guides/getting-started.md)
+- [`Guides`](https://github.com/consumet-rs/consumet.rs/tree/main/docs)
+- [`Movies`](https://github.com/consumet-rs/consumet.rs/tree/main/docs/guides/movies.md)
 
 ## Ecosystem
 - [Provider Status](https://github.com/consumet/providers-status/blob/main/README.md) - A list of providers and their status.
