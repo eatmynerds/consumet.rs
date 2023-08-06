@@ -49,7 +49,7 @@ impl BaseProvider for FlixHQ {
 
 impl FlixHQ {
     pub(crate) fn parse_recent_shows(&self, recent_html: String) -> Vec<Option<String>> {
-        let fragment = create_html_fragment(&trending_html);
+        let fragment = create_html_fragment(&recent_html);
 
         let trending_parser = Recent { elements: fragment };
 
@@ -57,7 +57,7 @@ impl FlixHQ {
     }
 
     pub(crate) fn parse_recent_movies(&self, recent_html: String) -> Vec<Option<String>> {
-        let fragment = create_html_fragment(&trending_html);
+        let fragment = create_html_fragment(&recent_html);
 
         let trending_parser = Recent { elements: fragment };
 
@@ -527,7 +527,7 @@ impl FlixHQ {
     /// # Parameters
     /// * `None`
     pub async fn trending_movies(&self) -> anyhow::Result<Vec<IMovieResult>> {
-        let trending_movies_html = reqwest::Client::new()
+        let trending_html = reqwest::Client::new()
             .get(format!("{}/home", self.base_url()))
             .send()
             .await?
@@ -551,7 +551,7 @@ impl FlixHQ {
     /// # Parameters
     /// * `None`
     pub async fn trending_shows(&self) -> anyhow::Result<Vec<IMovieResult>> {
-        let trending_shows_html = reqwest::Client::new()
+        let trending_html = reqwest::Client::new()
             .get(format!("{}/home", self.base_url()))
             .send()
             .await?
