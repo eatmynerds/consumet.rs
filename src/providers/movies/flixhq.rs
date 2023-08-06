@@ -9,17 +9,17 @@ use crate::models::{
 
 use crate::extractors::{MixDrop, VidCloud};
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 /// Contains all the FlixHQ Info
 pub struct FlixHQ;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct FlixHQServerInfo {
     link: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct FlixHQInfo {
     pub base: IMovieResult,
     pub info: IMovieInfo,
