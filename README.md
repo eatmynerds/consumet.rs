@@ -14,9 +14,9 @@ Credits to the beautiful people who wrote the original api consumet
     <a href="https://github.com/rust-lang/rust-clippy/actions?query=workflow%3A%22Clippy+Test+(bors)%22+event%3Apush+branch%3Aauto">
         <img src="https://github.com/rust-lang/rust-clippy/workflows/Clippy%20Test%20(bors)/badge.svg?branch=auto&event=push" alt="Clippy Test">
     </a>
-    <a href="#license">
-        <img src="https://img.shields.io/crates/l/clippy.svg" alt="License: MIT">
-    </a>
+    <a href="https://github.com/consumet-rs/api/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/consumet/api" alt="GitHub">
+  </a>
     <a href="https://crates.io/crates/consumet-rs">
         <img src="https://img.shields.io/crates/v/consumet-rs.svg">
     </a>
