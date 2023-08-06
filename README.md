@@ -17,8 +17,8 @@ Credits to the beautiful people who wrote the original api consumet
     <a href="#license">
         <img src="https://img.shields.io/crates/l/clippy.svg" alt="License: MIT">
     </a>
-    <a href="https://crates.io/crates/consumet-api-rs">
-        <img src="https://img.shields.io/crates/v/consumet-api-rs.svg">
+    <a href="https://crates.io/crates/consumet-rs">
+        <img src="https://img.shields.io/crates/v/consumet-rs.svg">
     </a>
     <a href="https://discord.gg/qTPfvMxzNH">
       <img src="https://img.shields.io/discord/987492554486452315?color=7289da&label=discord&logo=discord&logoColor=7289da" alt="Official Discord">
