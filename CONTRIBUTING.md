@@ -1,128 +1,163 @@
-# Contributor Covenant Code of Conduct
+<h1>Contributing</h1>
 
-## Our Pledge
+This guide is for the people who are interested in contributing to consumet.ts. It is not a complete guide yet, but it should help you get started. If you have any questions or any suggestions, please open a [issue](https://github.com/consumet/extensions/issues/new?assignees=&labels=Bug&template=bug-report.yml) or join the [discord server](https://discord.gg/qTPfvMxzNH).
 
-We as members, contributors, and leaders pledge to make participation in our
-community a harassment-free experience for everyone, regardless of age, body
-size, visible or invisible disability, ethnicity, sex characteristics, gender
-identity and expression, level of experience, education, socio-economic status,
-nationality, personal appearance, race, religion, or sexual identity
-and orientation.
+See our [informal contributing guide](./docs/guides/contributing.md) for more details on contributing to this project.
 
-We pledge to act and interact in ways that contribute to an open, welcoming,
-diverse, inclusive, and healthy community.
+<h2>Table of Contents</h2>
 
-## Our Standards
+- [Prerequisites](#prerequisites)
+  - [Cloning the repository](#cloning-the-repository)
+  - [Project structure](#project-structure)
+- [Writing a provider](#writing-a-provider)
+    - [Setting up the provider](#setting-up-the-provider)
+- [Updaing codebase](#updaing-codebase)
+  - [Updating documentation](#updating-documentation)
+  - [Fixing a provider](#fixing-a-provider)
+- [Commit message](#commit-message)
 
-Examples of behavior that contributes to a positive environment for our
-community include:
 
-* Demonstrating empathy and kindness toward other people
-* Being respectful of differing opinions, viewpoints, and experiences
-* Giving and gracefully accepting constructive feedback
-* Accepting responsibility and apologizing to those affected by our mistakes,
-  and learning from the experience
-* Focusing on what is best not just for us as individuals, but for the
-  overall community
+## Prerequisites
+To contribute to Consumet code, you need to know the following:
+   - [Nodejs](https://nodejs.org/)
+   - [TypeScript](https://www.typescriptlang.org/)
+   - Web scraping
+       - [Cheerio](https://cheerio.js.org/)
+       - [Axios](https://axios-http.com/docs/example)
+       - [Css Selectors](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors)
+       - [DevTools](https://developer.mozilla.org/en-US/docs/Learn/Common_questions/What_are_browser_developer_tools)
 
-Examples of unacceptable behavior include:
+### Cloning the repository
+1. [Fork the repository](https://github.com/consumet/consumet.ts/fork)
+2. Clone your fork to your local machine using the following command **(make sure to change `<your_username>` to your GitHub username)**:
+```sh
+git clone https://github.com/<your-username>/consumet-api.git
+```
+3. Create a new branch:
+```sh
+git checkout -b <new-branch-name>
+```
 
-* The use of sexualized language or imagery, and sexual attention or
-  advances of any kind
-* Trolling, insulting or derogatory comments, and personal or political attacks
-* Public or private harassment
-* Publishing others' private information, such as a physical or email
-  address, without their explicit permission
-* Other conduct which could reasonably be considered inappropriate in a
-  professional setting
+### Project structure
+I believe that project structure is needed to make it simple to contribute to consumet.ts.
 
-## Enforcement Responsibilities
+***\<category>*** is the category of the provider. For example, `anime` or `book`, `etc`.\
+***\<provider-name>*** is the name of the provider. For example, `libgen` or `gogoanime`, `etc`. (must be in camel case)
 
-Community leaders are responsible for clarifying and enforcing our standards of
-acceptable behavior and will take appropriate and fair corrective action in
-response to any behavior that they deem inappropriate, threatening, offensive,
-or harmful.
+```sh
+> tree
+docs/
+├── guides/
+|   ├── ...
+|   ├── anime.md
+|   ├── getting-started.md
+│   └── contributing.md (informal guide)
+├── providers/
+│   └── <provider-name>.md (provider documentation)
+├── README.md
+src/
+├── index.ts
+|── models
+├── providers
+│   ├── <category>
+│   │   ├── index.ts
+│   │   └── <provider-name>.ts
+│   └── <category>
+└── utils
+```
 
-Community leaders have the right and responsibility to remove, edit, or reject
-comments, commits, code, wiki edits, issues, and other contributions that are
-not aligned to this Code of Conduct, and will communicate reasons for moderation
-decisions when appropriate.
+## Writing a provider
+Each provider is a class that extends abstract class. For example, `Libgen` provider extends `BooksParser` class, and `Gogoanime` extends `AnimeParser`. the parser abstract classes can be found in the `src/models/` folder as follows:
+```sh
+src/models/anime-parser.ts # AnimeParser
+src/models/book-parser.ts  # BookParser
+src/models/lightnovel-parser.ts  # LightNovelParser
+src/models/comic-parser.ts # ComicParser
+src/models/manga-parser.ts # MangaParser
+src/models/movie-parser.ts # MovieParser
+```
+You are welcome to add anything to the abstract class that you believe will be beneficial.
 
-## Scope
+<details>
+   <summary>
+   visualization of the abstract classes hierarchy
+   </summary>
 
-This Code of Conduct applies within all community spaces, and also applies when
-an individual is officially representing the community in public spaces.
-Examples of representing our community include using an official e-mail address,
-posting via an official social media account, or acting as an appointed
-representative at an online or offline event.
+   ```mermaid
+   classDiagram
+         ProviderBase <|-- BaseParser
+         ProviderBase : +String name
+         ProviderBase : +String baseUrl
+         ProviderBase: +toString()
+         BaseParser <|-- AnimeParser
+         BaseParser <|-- BookParser
+         BaseParser <|-- MangaParser
+         BaseParser <|-- LightNovelParser
+         BaseParser <|-- ComicParser
+         BaseParser <|-- MovieParser
+         class BaseParser{
+            +search(String query)
+         }
+         class AnimeParser{
+            +fetchAnimeInfo(String animeId)
+            +fetchEpisodeSources(String episodeId)
+            +fetchEpisodeServers(String episodeId)
+         }
+         class MovieParser{
+            +fetchMediaInfo(String mediaId)
+            +fetchEpisodeSources(String episodeId)
+            +fetchEpisodeServers(String episodeId)
+         }
+         class BookParser{
+            empty
+         }
+         class MangaParser{
+            +fetchMangaInfo(String mangaId)
+            +fetchChapterPages(String chapterId)
+         }
+         class ComicParser{
+            empty
+         }
+         class LightNovelParser{
+            +fetchLighNovelInfo(String lightNovelId)
+            +fetchChapterContent(String chapterId)
+         }
+   ```
+</details>
 
-## Enforcement
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the community leaders responsible for enforcement at
-consumet.org@gmail.com.
-All complaints will be reviewed and investigated promptly and fairly.
+#### Setting up the provider
+1. Create a new file in the `src/providers/<category>/<provider-name>.ts` folder.
+2. Import the abstract class from the `src/models/<category>-parser.ts` file. for example: if you are writing an anime provider, you would need to implement the abstract class `AnimeParser`, which is defined in the `src/models/anime-parser.ts` file. 
+3. Start writing your provider code.
+4. Add the provider to the `src/providers/<category>/index.ts` file.
 
-All community leaders are obligated to respect the privacy and security of the
-reporter of any incident.
 
-## Enforcement Guidelines
+## Updaing codebase
+### Updating documentation
+1. Update the documentation.
+2. [Commit the changes](#commit-message).
 
-Community leaders will follow these Community Impact Guidelines in determining
-the consequences for any action they deem in violation of this Code of Conduct:
+### Fixing a provider
+1. Update the provider code.
+2. [Commit the changes](#commit-message).
 
-### 1. Correction
+## Commit message
+When you've made changes to one or more files, you have to *commit* that file. You also need a
+*message* for that *commit*.
 
-**Community Impact**: Use of inappropriate language or other behavior deemed
-unprofessional or unwelcome in the community.
+You should read [these](https://www.freecodecamp.org/news/writing-good-commit-messages-a-practical-guide/) guidelines, or that summarized:
 
-**Consequence**: A private, written warning from community leaders, providing
-clarity around the nature of the violation and an explanation of why the
-behavior was inappropriate. A public apology may be requested.
+- Short and detailed
+- Prefix one of these commit types:
+   - `feat:` A feature, possibly improving something already existing
+   - `fix:` A fix, for example of a bug
+   - `refactor:` Refactoring a specific section of the codebase
+   - `test:` Everything related to testing
+   - `docs:` Everything related to documentation
+   - `chore:` Code maintenance
 
-### 2. Warning
-
-**Community Impact**: A violation through a single incident or series
-of actions.
-
-**Consequence**: A warning with consequences for continued behavior. No
-interaction with the people involved, including unsolicited interaction with
-those enforcing the Code of Conduct, for a specified period of time. This
-includes avoiding interactions in community spaces as well as external channels
-like social media. Violating these terms may lead to a temporary or
-permanent ban.
-
-### 3. Temporary Ban
-
-**Community Impact**: A serious violation of community standards, including
-sustained inappropriate behavior.
-
-**Consequence**: A temporary ban from any sort of interaction or public
-communication with the community for a specified period of time. No public or
-private interaction with the people involved, including unsolicited interaction
-with those enforcing the Code of Conduct, is allowed during this period.
-Violating these terms may lead to a permanent ban.
-
-### 4. Permanent Ban
-
-**Community Impact**: Demonstrating a pattern of violation of community
-standards, including sustained inappropriate behavior,  harassment of an
-individual, or aggression toward or disparagement of classes of individuals.
-
-**Consequence**: A permanent ban from any sort of public interaction within
-the community.
-
-## Attribution
-
-This Code of Conduct is adapted from the [Contributor Covenant][homepage],
-version 2.0, available at
-https://www.contributor-covenant.org/version/2/0/code_of_conduct.html.
-
-Community Impact Guidelines were inspired by [Mozilla's code of conduct
-enforcement ladder](https://github.com/mozilla/diversity).
-
-[homepage]: https://www.contributor-covenant.org
-
-For answers to common questions about this code of conduct, see the FAQ at
-https://www.contributor-covenant.org/faq. Translations are available at
-https://www.contributor-covenant.org/translations.
+Examples:
+ - `feat: Speed up parsing with new technique`
+ - `fix: Fix 9anime search`
+ - `refactor: Reformat code at 9anime.ts`
