@@ -19,16 +19,15 @@ See our [informal contributing guide](./docs/guides/contributing.md) for more de
 
 ## Prerequisites
 To contribute to Consumet code, you need to know the following:
-   - [Nodejs](https://nodejs.org/)
-   - [TypeScript](https://www.typescriptlang.org/)
+   - [Cargo](https://www.rust-lang.org/learn/get-started)
+   - [Rust](https://www.rust-lang.org/)
    - Web scraping
-       - [Cheerio](https://cheerio.js.org/)
-       - [Axios](https://axios-http.com/docs/example)
+       - [Reqwest](https://crates.io/crates/reqwest/)
        - [Css Selectors](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors)
        - [DevTools](https://developer.mozilla.org/en-US/docs/Learn/Common_questions/What_are_browser_developer_tools)
 
 ### Cloning the repository
-1. [Fork the repository](https://github.com/consumet/consumet.ts/fork)
+1. [Fork the repository](https://github.com/consumet-rs/consumet.rs/fork)
 2. Clone your fork to your local machine using the following command **(make sure to change `<your_username>` to your GitHub username)**:
 ```sh
 git clone https://github.com/<your-username>/consumet-api.git
@@ -56,81 +55,20 @@ docs/
 │   └── <provider-name>.md (provider documentation)
 ├── README.md
 src/
-├── index.ts
+├── lib.rs
 |── models
 ├── providers
 │   ├── <category>
-│   │   ├── index.ts
-│   │   └── <provider-name>.ts
+│   │   ├── mod.rs
+│   │   └── <provider-name>.rs
 │   └── <category>
 └── utils
 ```
 
-## Writing a provider
-Each provider is a class that extends abstract class. For example, `Libgen` provider extends `BooksParser` class, and `Gogoanime` extends `AnimeParser`. the parser abstract classes can be found in the `src/models/` folder as follows:
-```sh
-src/models/anime-parser.ts # AnimeParser
-src/models/book-parser.ts  # BookParser
-src/models/lightnovel-parser.ts  # LightNovelParser
-src/models/comic-parser.ts # ComicParser
-src/models/manga-parser.ts # MangaParser
-src/models/movie-parser.ts # MovieParser
-```
-You are welcome to add anything to the abstract class that you believe will be beneficial.
-
-<details>
-   <summary>
-   visualization of the abstract classes hierarchy
-   </summary>
-
-   ```mermaid
-   classDiagram
-         ProviderBase <|-- BaseParser
-         ProviderBase : +String name
-         ProviderBase : +String baseUrl
-         ProviderBase: +toString()
-         BaseParser <|-- AnimeParser
-         BaseParser <|-- BookParser
-         BaseParser <|-- MangaParser
-         BaseParser <|-- LightNovelParser
-         BaseParser <|-- ComicParser
-         BaseParser <|-- MovieParser
-         class BaseParser{
-            +search(String query)
-         }
-         class AnimeParser{
-            +fetchAnimeInfo(String animeId)
-            +fetchEpisodeSources(String episodeId)
-            +fetchEpisodeServers(String episodeId)
-         }
-         class MovieParser{
-            +fetchMediaInfo(String mediaId)
-            +fetchEpisodeSources(String episodeId)
-            +fetchEpisodeServers(String episodeId)
-         }
-         class BookParser{
-            empty
-         }
-         class MangaParser{
-            +fetchMangaInfo(String mangaId)
-            +fetchChapterPages(String chapterId)
-         }
-         class ComicParser{
-            empty
-         }
-         class LightNovelParser{
-            +fetchLighNovelInfo(String lightNovelId)
-            +fetchChapterContent(String chapterId)
-         }
-   ```
-</details>
-
-
 #### Setting up the provider
-1. Create a new file in the `src/providers/<category>/<provider-name>.ts` folder.
-2. Import the abstract class from the `src/models/<category>-parser.ts` file. for example: if you are writing an anime provider, you would need to implement the abstract class `AnimeParser`, which is defined in the `src/models/anime-parser.ts` file. 
-3. Start writing your provider code.
-4. Add the provider to the `src/providers/<category>/index.ts` file.
+1. Create a new file in the `src/providers/<category>/<provider-name>.rs` folder.
+2. Start writing your provider code.
+3. Add the provider to the `src/providers/<category>/mod.rs` file.
 
 
 ## Updaing codebase
@@ -160,4 +98,4 @@ You should read [these](https://www.freecodecamp.org/news/writing-good-commit-me
 Examples:
  - `feat: Speed up parsing with new technique`
  - `fix: Fix 9anime search`
- - `refactor: Reformat code at 9anime.ts`
+ - `refactor: Reformat code at 9anime.rs`
