@@ -14,7 +14,7 @@ Credits to the beautiful people who wrote the original api consumet
     <a href="https://github.com/rust-lang/rust-clippy/actions?query=workflow%3A%22Clippy+Test+(bors)%22+event%3Apush+branch%3Aauto">
         <img src="https://github.com/rust-lang/rust-clippy/workflows/Clippy%20Test%20(bors)/badge.svg?branch=auto&event=push" alt="Clippy Test">
     </a>
-    <a href="https://github.com/consumet-rs/api/blob/main/LICENSE">
+    <a href="https://github.com/consumet-rs/api/blob/master/LICENSE">
     <img src="https://img.shields.io/github/license/consumet/api" alt="GitHub">
   </a>
     <a href="https://crates.io/crates/consumet-rs">
@@ -58,12 +58,12 @@ let data = flixhq.search("Vincenzo", None).await?;
 println!("{:#?}", data);
 ```
 
-Do you want to know more? Head to the [`Getting Started`](https://github.com/consumet-rs/consumet.rs/tree/main/docs/guides/getting-started.md).
+Do you want to know more? Head to the [`Getting Started`](https://github.com/consumet-rs/consumet.rs/tree/master/docs/guides/getting-started.md).
 
 ## Documentation
-- [`Getting Started`](https://github.com/consumet-rs/consumet.rs/tree/main/docs/guides/getting-started.md)
-- [`Guides`](https://github.com/consumet-rs/consumet.rs/tree/main/docs)
-- [`Movies`](https://github.com/consumet-rs/consumet.rs/tree/main/docs/guides/movies.md)
+- [`Getting Started`](https://github.com/consumet-rs/consumet.rs/tree/master/docs/guides/getting-started.md)
+- [`Guides`](https://github.com/consumet-rs/consumet.rs/tree/master/docs)
+- [`Movies`](https://github.com/consumet-rs/consumet.rs/tree/master/docs/guides/movies.md)
 
 ## Ecosystem
 - [Provider Status](https://github.com/consumet/providers-status/blob/main/README.md) - A list of providers and their status.
@@ -77,4 +77,4 @@ You can contact the maintainer of consumet-api-rs via [email](mailto:vipershnipe
 </a>
 
 ## License
-Licensed under [APACHE](./LICENSE).
+Licensed under [GPL-3.0](./LICENSE).
