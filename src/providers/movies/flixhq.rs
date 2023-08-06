@@ -48,6 +48,38 @@ impl BaseProvider for FlixHQ {
 }
 
 impl FlixHQ {
+    pub(crate) fn parse_recent_shows(&self, recent_html: String) -> Vec<Option<String>> {
+        let fragment = create_html_fragment(&trending_html);
+
+        let trending_parser = Recent { elements: fragment };
+
+        trending_parser.recent_shows()
+    }
+
+    pub(crate) fn parse_recent_movies(&self, recent_html: String) -> Vec<Option<String>> {
+        let fragment = create_html_fragment(&trending_html);
+
+        let trending_parser = Recent { elements: fragment };
+
+        trending_parser.recent_movies()
+    }
+
+    pub(crate) fn parse_trending_movies(&self, trending_html: String) -> Vec<Option<String>> {
+        let fragment = create_html_fragment(&trending_html);
+
+        let trending_parser = Trending { elements: fragment };
+
+        trending_parser.trending_movies()
+    }
+
+    pub(crate) fn parse_trending_shows(&self, trending_html: String) -> Vec<Option<String>> {
+        let fragment = create_html_fragment(&trending_html);
+
+        let trending_parser = Trending { elements: fragment };
+
+        trending_parser.trending_shows()
+    }
+
     pub(crate) fn parse_search(
         &self,
         page_html: String,
@@ -447,18 +479,14 @@ impl FlixHQ {
     /// # Parameters
     /// * `None`
     pub async fn recent_movies(&self) -> anyhow::Result<Vec<IMovieResult>> {
-        let recent_movie_html = reqwest::Client::new()
+        let recent_html = reqwest::Client::new()
             .get(format!("{}/home", self.base_url()))
             .send()
             .await?
             .text()
             .await?;
 
-        let fragment = create_html_fragment(&recent_movie_html);
-
-        let recent_parser = Recent { elements: fragment };
-
-        let ids = recent_parser.recent_movies();
+        let ids = self.parse_recent_movies(recent_html);
 
         let mut results = vec![];
 
@@ -475,18 +503,14 @@ impl FlixHQ {
     /// # Parameters
     /// * `None`
     pub async fn recent_shows(&self) -> anyhow::Result<Vec<IMovieResult>> {
-        let recent_shows_html = reqwest::Client::new()
+        let recent_html = reqwest::Client::new()
             .get(format!("{}/home", self.base_url()))
             .send()
             .await?
             .text()
             .await?;
 
-        let fragment = create_html_fragment(&recent_shows_html);
-
-        let recent_parser = Recent { elements: fragment };
-
-        let ids = recent_parser.recent_shows();
+        let ids = self.parse_recent_shows(recent_html);
 
         let mut results = vec![];
 
@@ -510,11 +534,7 @@ impl FlixHQ {
             .text()
             .await?;
 
-        let fragment = create_html_fragment(&trending_movies_html);
-
-        let trending_parser = Trending { elements: fragment };
-
-        let ids = trending_parser.trending_movies();
+        let ids = self.parse_trending_movies(trending_html);
 
         let mut results = vec![];
 
@@ -538,11 +558,7 @@ impl FlixHQ {
             .text()
             .await?;
 
-        let fragment = create_html_fragment(&trending_shows_html);
-
-        let trending_parser = Trending { elements: fragment };
-
-        let ids = trending_parser.trending_shows();
+        let ids = self.parse_trending_shows(trending_html);
 
         let mut results = vec![];
 
