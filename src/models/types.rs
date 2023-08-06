@@ -168,7 +168,7 @@ pub struct IVideo {
 }
 
 /// Used to get the video url for the server chosen
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize, Serialize)]
 pub enum StreamingServers {
     GogoCDN,
     StreamSB,
@@ -519,7 +519,7 @@ pub struct IMovieInfo {
 }
 
 ///  Contains all the possible Genres
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Genres {
     Action,
     Adventure,
