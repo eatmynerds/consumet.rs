@@ -42,7 +42,7 @@ Awesome, that was easy.
 
 if you want to use different providers, you can check the providers list [here](https://consumet.org/extensions/list/) or in [json format](https://github.com/consumet/providers-status/blob/main/providers-list.json).
 
-if you have any questions, please join the [official consumet api discord server](https://discord.gg/qTPfvMxzNH) or open an [issue](https://github.com/carrotshniper21/consumet-api-rs/issues).
+if you have any questions, please join the [official consumet api discord server](https://discord.gg/qTPfvMxzNH) or open an [issue](https://github.com/consumet-rs/consumet.rs/issues).
 
-<p align="end">(<a href="https://github.com/consumet/extensions/blob/master/docs">back to table of contents</a>)</p>
+<p align="end">(<a href="https://github.com/consumet-rs/consumet.rs/blob/master/docs">back to table of contents</a>)</p>
 
