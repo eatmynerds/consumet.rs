@@ -519,7 +519,7 @@ pub struct INewsFeedPreview {
 }
 
 /// Contains Movie Seasons
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct IMovieSeason {
     pub season: Option<usize>,
     pub image: Option<String>,
@@ -527,7 +527,7 @@ pub struct IMovieSeason {
 }
 
 /// Contains Movie Info
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct IMovieInfo {
     pub genres: Option<Vec<String>>,
     pub description: Option<String>,
