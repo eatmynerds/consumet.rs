@@ -364,7 +364,6 @@ pub struct LibgenBook {
     pub hashes: Hashes,
 }
 
-
 /// Contains Book Search Results
 #[derive(Debug, Deserialize, Serialize)]
 pub struct LibgenResult {
