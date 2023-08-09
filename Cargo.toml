@@ -1,6 +1,6 @@
 [package]
 name = "consumet-rs"
-version = "0.0.5"
+version = "0.0.6"
 edition = "2021"
 description = "Consumet API RIIR"
 license-file = "LICENSE"

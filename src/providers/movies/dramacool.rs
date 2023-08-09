@@ -1,16 +1,14 @@
 use super::dramacool_html::{create_html_fragment, Page, Search};
-use crate::models::{
-    IMovieEpisode, IMovieInfo, IMovieResult, ISearch, ISource, StreamingServers,
-};
+use crate::models::{IMovieEpisode, IMovieInfo, IMovieResult, ISearch, ISource, StreamingServers};
 
 use serde::Deserialize;
 
 // Contains all the DramaCool Info
 pub struct DramaCool;
 
-#[derive(Debug, Deserialize)] 
+#[derive(Debug, Deserialize)]
 pub struct DramaCoolServerInfo {
-    link: String
+    link: String,
 }
 
 #[derive(Debug)]
@@ -33,9 +31,7 @@ impl DramaCool {
         let page_html = reqwest::Client::new()
             .get(format!(
                 "{}/search?keyword={}&page={}",
-                BASE_URL,
-                parsed_query,
-                page
+                BASE_URL, parsed_query, page
             ))
             .send()
             .await?

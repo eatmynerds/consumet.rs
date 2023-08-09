@@ -3,8 +3,8 @@ use super::flixhq_html::{
 };
 
 use crate::models::{
-    ExtractConfig, IEpisodeServer, IMovieEpisode, IMovieInfo, IMovieResult,
-    IMovieSeason, ISearch, ISource, StreamingServers, TvType, VideoExtractor,
+    ExtractConfig, IEpisodeServer, IMovieEpisode, IMovieInfo, IMovieResult, IMovieSeason, ISearch,
+    ISource, StreamingServers, TvType, VideoExtractor,
 };
 
 use crate::extractors::{MixDrop, VidCloud};
@@ -164,9 +164,7 @@ impl FlixHQ {
         let page_html = reqwest::Client::new()
             .get(format!(
                 "{}/search/{}?page={}",
-                BASE_URL,
-                parsed_query,
-                page
+                BASE_URL, parsed_query, page
             ))
             .send()
             .await?
@@ -242,11 +240,7 @@ impl FlixHQ {
 
             for (i, episode) in season_ids.iter().enumerate() {
                 let episode_html = reqwest::Client::new()
-                    .get(format!(
-                        "{}/ajax/v2/season/episodes/{}",
-                        BASE_URL,
-                        &episode
-                    ))
+                    .get(format!("{}/ajax/v2/season/episodes/{}", BASE_URL, &episode))
                     .send()
                     .await?
                     .text()
@@ -300,8 +294,7 @@ impl FlixHQ {
         let episode_id = format!(
             "{}/ajax/{}",
             BASE_URL,
-            if !episode_id.starts_with(&format!("{}/ajax", BASE_URL))
-                && !media_id.contains("movie")
+            if !episode_id.starts_with(&format!("{}/ajax", BASE_URL)) && !media_id.contains("movie")
             {
                 format!("v2/episode/servers/{}", episode_id)
             } else {

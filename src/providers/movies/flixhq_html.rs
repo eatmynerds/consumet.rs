@@ -76,7 +76,7 @@ impl<'page, 'b> Search<'page, 'b> {
         match self.id.split('/').next() {
             Some("tv") => Some(TvType::TvSeries),
             Some("movie") => Some(TvType::Movie),
-            _ => None
+            _ => None,
         }
     }
 }
