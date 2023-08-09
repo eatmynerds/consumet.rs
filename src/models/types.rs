@@ -1,4 +1,3 @@
-use crate::models::Hashes;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -16,16 +15,32 @@ pub enum Other {
     Poster(String),
 }
 
-/// Contains Provider Statistics
-#[derive(Clone, Copy, Debug)]
-pub struct IProviderStats<'a> {
-    pub name: &'a str,
-    pub base_url: &'a str,
-    pub lang: &'a [&'a str],
-    pub is_nsfw: bool,
-    pub logo: &'a str,
-    pub class_path: &'a str,
-    pub is_working: bool,
+/// Book Info struct
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Book {
+    pub title: String,
+    pub authors: Vec<String>,
+    pub publisher: String,
+    pub year: String,
+    pub edition: String,
+    pub volume: String,
+    pub series: String,
+    pub isbn: Vec<String>,
+    pub image: String,
+    pub description: String,
+    pub link: String,
+}
+
+/// Hash struct
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Hashes {
+    pub aich: String,
+    pub crc32: String,
+    pub edonkey: String,
+    pub md5: String,
+    pub sha1: String,
+    pub sha256: Vec<String>,
+    pub tth: String,
 }
 
 /// Contains Title Info
@@ -328,15 +343,27 @@ pub struct ILightNovelInfo {
 /// Contains Book Search Results Info
 #[derive(Debug, Deserialize, Serialize)]
 pub struct LibgenBook {
+    pub title: String,
+    pub authors: Vec<String>,
+    pub publisher: String,
+    pub year: String,
+    pub edition: String,
+    pub volume: String,
+    pub series: String,
+    pub isbn: Vec<String>,
+    pub link: String,
     pub id: String,
     pub language: String,
     pub format: String,
     pub size: String,
     pub pages: String,
+    pub image: String,
+    pub description: String,
     pub table_of_contents: String,
     pub topic: String,
     pub hashes: Hashes,
 }
+
 
 /// Contains Book Search Results
 #[derive(Debug, Deserialize, Serialize)]
