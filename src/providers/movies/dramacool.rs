@@ -1,7 +1,6 @@
-
 use super::dramacool_html::{create_html_fragment, Page, Search};
 use crate::models::{
-    BaseProvider, IMovieEpisode, IMovieInfo, IMovieResult, ISearch, ISource, StreamingServers,
+    IMovieEpisode, IMovieInfo, IMovieResult, ISearch, ISource, StreamingServers,
 };
 
 use serde::Deserialize;
@@ -20,27 +19,7 @@ pub struct DramaCoolInfo {
     pub info: IMovieInfo,
 }
 
-impl BaseProvider for DramaCool {
-    #[inline]
-    fn name(&self) -> &str {
-        "DramaCool"
-    }
-
-    #[inline]
-    fn base_url(&self) -> &str {
-        "https://dramacool.hr"
-    }
-
-    #[inline]
-    fn logo(&self) -> &str {
-        "https://play-lh.googleusercontent.com/IaCb2JXII0OV611MQ-wSA8v_SAs9XF6E3TMDiuxGGXo4wp9bI60GtDASIqdERSTO5XU"
-    }
-
-    #[inline]
-    fn class_path(&self) -> &str {
-        "MOVIES.DramaCool"
-    }
-}
+const BASE_URL: &'static str = "https://dramacool.hr";
 
 impl DramaCool {
     pub async fn search(
@@ -54,7 +33,7 @@ impl DramaCool {
         let page_html = reqwest::Client::new()
             .get(format!(
                 "{}/search?keyword={}&page={}",
-                self.base_url(),
+                BASE_URL,
                 parsed_query,
                 page
             ))
@@ -90,7 +69,7 @@ impl DramaCool {
     /// # Parameters
     /// * `id` - the id of the provided drama
     async fn fetch_search_result(&self, id: &str) -> anyhow::Result<IMovieResult> {
-        let url = format!("{}/{}", self.base_url(), id);
+        let url = format!("{}/{}", BASE_URL, id);
 
         let media_html = reqwest::Client::new()
             .get(&url)

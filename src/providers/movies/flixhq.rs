@@ -3,7 +3,7 @@ use super::flixhq_html::{
 };
 
 use crate::models::{
-    BaseProvider, ExtractConfig, IEpisodeServer, IMovieEpisode, IMovieInfo, IMovieResult,
+    ExtractConfig, IEpisodeServer, IMovieEpisode, IMovieInfo, IMovieResult,
     IMovieSeason, ISearch, ISource, StreamingServers, TvType, VideoExtractor,
 };
 
@@ -25,27 +25,7 @@ pub struct FlixHQInfo {
     pub info: IMovieInfo,
 }
 
-impl BaseProvider for FlixHQ {
-    #[inline]
-    fn name(&self) -> &str {
-        "FlixHQ"
-    }
-
-    #[inline]
-    fn base_url(&self) -> &str {
-        "https://flixhq.to"
-    }
-
-    #[inline]
-    fn logo(&self) -> &str {
-        "https://upload.wikimedia.org/wikipedia/commons/7/7a/MyAnimeList_Logo.png"
-    }
-
-    #[inline]
-    fn class_path(&self) -> &str {
-        "MOVIES.FlixHQ"
-    }
-}
+const BASE_URL: &'static str = "https://flixhq.to";
 
 impl FlixHQ {
     pub(crate) fn parse_recent_shows(&self, recent_html: String) -> Vec<Option<String>> {
@@ -158,7 +138,7 @@ impl FlixHQ {
     pub(crate) fn info_episode(&self, episode_html: String, index: usize) -> Episodes {
         let fragment = create_html_fragment(&episode_html);
 
-        Episodes::episode_results(fragment, self.base_url(), index)
+        Episodes::episode_results(fragment, BASE_URL, index)
     }
 
     pub(crate) fn info_server(&self, server_html: String, media_id: &str) -> Vec<IEpisodeServer> {
@@ -167,7 +147,7 @@ impl FlixHQ {
         let server_parser = Server { element: fragment };
 
         server_parser
-            .parse_server_html(self.base_url(), media_id)
+            .parse_server_html(BASE_URL, media_id)
             .into_iter()
             .flatten()
             .collect()
@@ -184,7 +164,7 @@ impl FlixHQ {
         let page_html = reqwest::Client::new()
             .get(format!(
                 "{}/search/{}?page={}",
-                self.base_url(),
+                BASE_URL,
                 parsed_query,
                 page
             ))
@@ -216,7 +196,7 @@ impl FlixHQ {
     /// # Parameters
     /// * `id` - the id of a movie or show
     pub async fn fetch_search_result(&self, id: &str) -> anyhow::Result<IMovieResult> {
-        let url = format!("{}/{}", self.base_url(), id);
+        let url = format!("{}/{}", BASE_URL, id);
 
         let media_html = reqwest::Client::new()
             .get(&url)
@@ -238,7 +218,7 @@ impl FlixHQ {
         let is_seasons = matches!(media_type, TvType::TvSeries);
 
         let info_html = reqwest::Client::new()
-            .get(format!("{}/{}", self.base_url(), media_id))
+            .get(format!("{}/{}", BASE_URL, media_id))
             .send()
             .await?
             .text()
@@ -250,7 +230,7 @@ impl FlixHQ {
             let id = media_id.split('-').last().unwrap_or_default().to_owned();
 
             let season_html = reqwest::Client::new()
-                .get(format!("{}/ajax/v2/tv/seasons/{}", self.base_url(), id))
+                .get(format!("{}/ajax/v2/tv/seasons/{}", BASE_URL, id))
                 .send()
                 .await?
                 .text()
@@ -264,7 +244,7 @@ impl FlixHQ {
                 let episode_html = reqwest::Client::new()
                     .get(format!(
                         "{}/ajax/v2/season/episodes/{}",
-                        self.base_url(),
+                        BASE_URL,
                         &episode
                     ))
                     .send()
@@ -319,8 +299,8 @@ impl FlixHQ {
     ) -> anyhow::Result<Vec<IEpisodeServer>> {
         let episode_id = format!(
             "{}/ajax/{}",
-            self.base_url(),
-            if !episode_id.starts_with(&format!("{}/ajax", self.base_url()))
+            BASE_URL,
+            if !episode_id.starts_with(&format!("{}/ajax", BASE_URL))
                 && !media_id.contains("movie")
             {
                 format!("v2/episode/servers/{}", episode_id)
@@ -373,7 +353,7 @@ impl FlixHQ {
             .unwrap_or_default();
 
         let server_json = reqwest::Client::new()
-            .get(format!("{}/ajax/get_link/{}", self.base_url(), server_id))
+            .get(format!("{}/ajax/get_link/{}", BASE_URL, server_id))
             .send()
             .await?
             .text()
@@ -480,7 +460,7 @@ impl FlixHQ {
     /// * `None`
     pub async fn recent_movies(&self) -> anyhow::Result<Vec<IMovieResult>> {
         let recent_html = reqwest::Client::new()
-            .get(format!("{}/home", self.base_url()))
+            .get(format!("{}/home", BASE_URL))
             .send()
             .await?
             .text()
@@ -504,7 +484,7 @@ impl FlixHQ {
     /// * `None`
     pub async fn recent_shows(&self) -> anyhow::Result<Vec<IMovieResult>> {
         let recent_html = reqwest::Client::new()
-            .get(format!("{}/home", self.base_url()))
+            .get(format!("{}/home", BASE_URL))
             .send()
             .await?
             .text()
@@ -528,7 +508,7 @@ impl FlixHQ {
     /// * `None`
     pub async fn trending_movies(&self) -> anyhow::Result<Vec<IMovieResult>> {
         let trending_html = reqwest::Client::new()
-            .get(format!("{}/home", self.base_url()))
+            .get(format!("{}/home", BASE_URL))
             .send()
             .await?
             .text()
@@ -552,7 +532,7 @@ impl FlixHQ {
     /// * `None`
     pub async fn trending_shows(&self) -> anyhow::Result<Vec<IMovieResult>> {
         let trending_html = reqwest::Client::new()
-            .get(format!("{}/home", self.base_url()))
+            .get(format!("{}/home", BASE_URL))
             .send()
             .await?
             .text()
