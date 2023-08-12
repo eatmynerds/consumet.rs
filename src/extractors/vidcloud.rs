@@ -98,7 +98,7 @@ impl VideoExtractor for VidCloud {
             File::DecryptedURL(decrypted) => decrypted,
             File::EncryptedURL(encrypted) => {
                 let decrypt_key: Vec<(usize, usize)> = reqwest::Client::new()
-                    .get("https://raw.githubusercontent.com/enimax-anime/key/e4/key.txt")
+                    .get("https://raw.githubusercontent.com/carrotshniper21/key/e4/key.txt")
                     .send()
                     .await?
                     .json()
