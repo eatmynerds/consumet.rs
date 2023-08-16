@@ -183,8 +183,9 @@ pub struct IVideo {
 }
 
 /// Used to get the video url for the server chosen
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Default, Clone, Copy, Debug, PartialEq, Eq, Deserialize, Serialize)]
 pub enum StreamingServers {
+    #[default]
     GogoCDN,
     StreamSB,
     MixDrop,
@@ -477,12 +478,14 @@ pub struct IMovieResult {
 }
 
 /// Contains News Feed Info
-#[derive(Debug, Deserialize, Serialize)]
 pub struct INewsFeed {
-    /** topics of the feed */
+    pub title: String,
+    pub id: String,
+    pub uploaded_at: String,
     pub topics: Vec<Topics>,
-    /** preview of the news feed */
     pub preview: INewsFeedPreview,
+    pub thumbnail: String,
+    pub url: String,
 }
 
 /// Contains News Info

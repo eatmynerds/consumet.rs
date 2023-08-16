@@ -1,4 +1,4 @@
-use super::MovieParser;
+use super::{MovieConfig, MovieParser};
 use crate::models::{IEpisodeServer, IMovieInfo, IMovieResult, ISearch, ISource};
 
 pub struct KissAsian;
@@ -6,27 +6,36 @@ pub struct KissAsian;
 #[derive(Debug)]
 pub enum KissAsianError {}
 
-impl MovieParser for KissAsian {
+const BASE_URL: &str = "https://kissasian.mx";
+
+impl<'a> MovieParser<'a> for KissAsian {
     type MovieError = KissAsianError;
 
-    async fn search(&self, _query: &str) -> Result<ISearch<IMovieResult>, Self::MovieError> {
+    async fn search(
+        &self,
+        args: MovieConfig<'a>, // query, page = 1
+    ) -> Result<ISearch<IMovieResult>, <KissAsian as MovieParser<'a>>::MovieError> {
         todo!()
     }
 
-    async fn fetch_media_info(&self, _media_id: &str) -> Result<IMovieInfo, Self::MovieError> {
+    async fn fetch_media_info(
+        &self,
+        args: MovieConfig<'a>,
+    ) -> Result<IMovieInfo, <KissAsian as MovieParser<'a>>::MovieError> {
         todo!()
     }
 
     async fn fetch_episode_servers(
         &self,
-        _episode_id: &str,
-    ) -> Result<Vec<IEpisodeServer>, Self::MovieError> {
+        args: MovieConfig<'a>,
+    ) -> Result<Vec<IEpisodeServer>, <KissAsian as MovieParser<'a>>::MovieError> {
         todo!()
     }
 
-    async fn fetch_episode_sources(&self, _episode_id: &str) -> Result<ISource, Self::MovieError> {
+    async fn fetch_episode_sources(
+        &self,
+        args: MovieConfig<'a>,
+    ) -> Result<ISource, <KissAsian as MovieParser<'a>>::MovieError> {
         todo!()
     }
 }
-
-impl KissAsian {}

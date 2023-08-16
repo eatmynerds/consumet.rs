@@ -1,4 +1,4 @@
-use crate::models::{IMangaChapterPage, IMangaInfo};
+use crate::models::{IMangaChapterPage, IMangaInfo, IMangaResult, ISearch};
 
 pub mod asurascans;
 pub mod brmangas;
@@ -13,10 +13,20 @@ pub mod mangapill;
 pub mod mangareader;
 pub mod mangasee123;
 
-pub trait MangaParser {
+#[derive(Default, Clone, Debug)]
+pub struct MangaConfig<'a> {
+    query: Option<&'a str>,
+    page: Option<usize>,
+    limit: Option<usize>,
+}
+
+pub trait MangaParser<'a> {
     type MangaError;
 
-    async fn search(&self, query: &str) -> Result<String, Self::MangaError>;
+    async fn search(
+        &self,
+        args: MangaConfig<'a>,
+    ) -> Result<ISearch<IMangaResult>, Self::MangaError>;
 
     async fn fetch_manga_info(&self, manga_id: &str) -> Result<IMangaInfo, Self::MangaError>;
 

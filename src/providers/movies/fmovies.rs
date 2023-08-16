@@ -1,4 +1,4 @@
-use super::MovieParser;
+use super::{MovieConfig, MovieParser};
 use crate::models::{IEpisodeServer, IMovieInfo, IMovieResult, ISearch, ISource};
 
 pub struct Fmovies;
@@ -6,27 +6,50 @@ pub struct Fmovies;
 #[derive(Debug)]
 pub enum FmoviesError {}
 
-impl MovieParser for Fmovies {
+const BASE_URL: &str = "https://fmovies.to";
+
+impl<'a> MovieParser<'a> for Fmovies {
     type MovieError = FmoviesError;
 
-    async fn search(&self, _query: &str) -> Result<ISearch<IMovieResult>, Self::MovieError> {
+    async fn search(
+        &self,
+        args: MovieConfig<'a>, // query, page = 1
+    ) -> Result<ISearch<IMovieResult>, <Fmovies as MovieParser<'a>>::MovieError> {
         todo!()
     }
 
-    async fn fetch_media_info(&self, _media_id: &str) -> Result<IMovieInfo, Self::MovieError> {
+    async fn fetch_media_info(
+        &self,
+        args: MovieConfig<'a>,
+    ) -> Result<IMovieInfo, <Fmovies as MovieParser<'a>>::MovieError> {
         todo!()
     }
 
     async fn fetch_episode_servers(
         &self,
-        _episode_id: &str,
-    ) -> Result<Vec<IEpisodeServer>, Self::MovieError> {
+        args: MovieConfig<'a>,
+    ) -> Result<Vec<IEpisodeServer>, <Fmovies as MovieParser<'a>>::MovieError> {
         todo!()
     }
 
-    async fn fetch_episode_sources(&self, _episode_id: &str) -> Result<ISource, Self::MovieError> {
+    async fn fetch_episode_sources(
+        &self,
+        args: MovieConfig<'a>,
+    ) -> Result<ISource, <Fmovies as MovieParser<'a>>::MovieError> {
         todo!()
     }
 }
 
-impl Fmovies {}
+impl Fmovies {
+    async fn ev(&self, query: &str) -> String {
+        todo!()
+    }
+
+    async fn decrypt(&self, query: &str) -> String {
+        todo!()
+    }
+
+    async fn ajax_req_url(&self, id: &str) -> String {
+        todo!()
+    }
+}
