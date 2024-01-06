@@ -11,13 +11,13 @@ Let's start!
 ### Installation
 Install with cargo:
 ```sh
-cargo add consumet-rs
+cargo add consumet
 ```
 ### Usage
 
 **Example** - searching for a film using the flixhq provider.
 ```rust
-use consumet_rs::providers::movies;
+use consumet::providers::movies;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -42,7 +42,7 @@ Awesome, that was easy.
 
 if you want to use different providers, you can check the providers list [here](https://consumet.org/extensions/list/) or in [json format](https://github.com/consumet/providers-status/blob/main/providers-list.json).
 
-if you have any questions, please join the [official consumet api discord server](https://discord.gg/qTPfvMxzNH) or open an [issue](https://github.com/consumet-rs/consumet.rs/issues).
+if you have any questions, please join the [official consumet api discord server](https://discord.gg/qTPfvMxzNH) or open an [issue](https://github.com/eatmynerds/consumet.rs/issues).
 
-<p align="end">(<a href="https://github.com/consumet-rs/consumet.rs/blob/master/docs">back to table of contents</a>)</p>
+<p align="end">(<a href="https://github.com/eatmynerds/consumet.rs/blob/master/docs">back to table of contents</a>)</p>
 
