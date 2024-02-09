@@ -1,4 +1,5 @@
-use crate::models::types::{IEpisodeServer, IMovieEpisode, TvType};
+use super::flixhq::{FlixHQEpisode, FlixHQServer};
+use crate::models::types::TvType;
 use visdom::{types::Elements, Vis};
 
 pub fn create_html_fragment(page_html: &str) -> Elements<'_> {
@@ -76,7 +77,7 @@ impl<'page, 'b> Search<'page, 'b> {
         match self.id.split('/').next() {
             Some("tv") => TvType::TvSeries,
             Some("movie") => TvType::Movie,
-            _ => todo!()
+            _ => todo!(),
         }
     }
 }
@@ -131,12 +132,12 @@ impl<'page, 'b> Info<'page, 'b> {
 }
 
 pub struct Episodes {
-    pub episodes: Vec<IMovieEpisode>,
+    pub episodes: Vec<FlixHQEpisode>,
     pub index: usize,
 }
 
 impl Iterator for Episodes {
-    type Item = IMovieEpisode;
+    type Item = FlixHQEpisode;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.index < self.episodes.len() {
@@ -170,13 +171,13 @@ impl Episodes {
         let episode_titles = Self::episode_title(&fragment);
         let episode_ids = Self::episode_id(&fragment);
 
-        let episode: Vec<IMovieEpisode> = episode_ids
+        let episode: Vec<FlixHQEpisode> = episode_ids
             .iter()
             .zip(episode_titles.iter())
             .flat_map(|(id, title)| id.as_ref().map(|id| (id, title)))
             .map(|(id, title)| {
                 let url = format!("{}/ajax/v2/episode/servers/{}", base_url, id);
-                IMovieEpisode {
+                FlixHQEpisode {
                     id: id.clone(),
                     title: title.clone(),
                     season: Some(i + 1),
@@ -215,7 +216,7 @@ pub struct Server<'a> {
 }
 
 impl<'a> Server<'a> {
-    pub fn parse_server_html(&self, base_url: &str, media_id: &str) -> Vec<Option<IEpisodeServer>> {
+    pub fn parse_server_html(&self, base_url: &str, media_id: &str) -> Vec<Option<FlixHQServer>> {
         self.element.find("ul > li > a").map(|_, element| {
             let id = element
                 .get_attribute("id")
@@ -231,7 +232,7 @@ impl<'a> Server<'a> {
                 None
             };
 
-            Some(IEpisodeServer { name, url })
+            Some(FlixHQServer{ name, url })
         })
     }
 }
