@@ -72,11 +72,11 @@ impl<'page, 'b> Search<'page, 'b> {
         )
     }
 
-    pub fn search_media_type(&self) -> Option<TvType> {
+    pub fn search_media_type(&self) -> TvType {
         match self.id.split('/').next() {
-            Some("tv") => Some(TvType::TvSeries),
-            Some("movie") => Some(TvType::Movie),
-            _ => None,
+            Some("tv") => TvType::TvSeries,
+            Some("movie") => TvType::Movie,
+            _ => todo!()
         }
     }
 }
@@ -101,38 +101,32 @@ impl<'page, 'b> Info<'page, 'b> {
             .collect()
     }
 
-    pub fn info_description(&self) -> Option<String> {
-        Some(self.elements.find("#main-wrapper > div.movie_information > div > div.m_i-detail > div.m_i-d-content > div.description").text().trim().to_owned())
+    pub fn info_description(&self) -> String {
+        self.elements.find("#main-wrapper > div.movie_information > div > div.m_i-detail > div.m_i-d-content > div.description").text().trim().to_owned()
     }
 
-    pub fn info_quality(&self) -> Option<String> {
-        Some(
-            self.elements
-                .find("span.item:nth-child(1)")
-                .text()
-                .trim()
-                .to_owned(),
-        )
+    pub fn info_quality(&self) -> String {
+        self.elements
+            .find("span.item:nth-child(1)")
+            .text()
+            .trim()
+            .to_owned()
     }
 
-    pub fn info_rating(&self) -> Option<String> {
-        Some(
-            self.elements
-                .find("span.item:nth-child(2)")
-                .text()
-                .trim()
-                .to_owned(),
-        )
+    pub fn info_rating(&self) -> String {
+        self.elements
+            .find("span.item:nth-child(2)")
+            .text()
+            .trim()
+            .to_owned()
     }
 
-    pub fn info_duration(&self) -> Option<String> {
-        Some(
-            self.elements
-                .find("span.item:nth-child(3)")
-                .text()
-                .trim()
-                .to_owned(),
-        )
+    pub fn info_duration(&self) -> String {
+        self.elements
+            .find("span.item:nth-child(3)")
+            .text()
+            .trim()
+            .to_owned()
     }
 }
 

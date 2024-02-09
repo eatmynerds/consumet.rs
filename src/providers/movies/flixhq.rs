@@ -15,14 +15,57 @@ use serde::{Deserialize, Serialize};
 pub struct FlixHQ;
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct FlixHQServerInfo {
-    link: String,
+pub enum FlixhqSearchResult {
+    Tv(FlixHQShowResult),
+    Movie(FlixHQMovieResult),
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct FlixHQInfo {
-    pub base: IMovieResult,
-    pub info: IMovieInfo,
+pub struct FlixHQMovieResult {
+    pub id: String,
+    pub cover: Option<String>,
+    pub title: String,
+    pub url: String,
+    pub image: Option<String>,
+    pub release_date: String,
+    pub media_type: TvType,
+    pub genres: Vec<String>,
+    pub description: String,
+    pub rating: String,
+    pub quality: String,
+    pub duration: String,
+    pub country: Vec<String>,
+    pub production: Vec<String>,
+    pub casts: Vec<String>,
+    pub tags: Vec<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct FlixHQShowResult {
+    pub id: String,
+    pub cover: Option<String>,
+    pub title: String,
+    pub url: String,
+    pub image: Option<String>,
+    pub release_date: String,
+    pub media_type: TvType,
+    pub genres: Vec<String>,
+    pub description: String,
+    pub rating: String,
+    pub quality: String,
+    pub duration: String,
+    pub country: Vec<String>,
+    pub production: Vec<String>,
+    pub casts: Vec<String>,
+    pub tags: Vec<String>,
+    pub total_episodes: Option<usize>,
+    pub seasons: Option<IMovieSeason>,
+    pub episodes: Option<Vec<Vec<IMovieEpisode>>>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct FlixHQServerInfo {
+    link: String,
 }
 
 const BASE_URL: &'static str = "https://flixhq.to";
@@ -72,7 +115,12 @@ impl FlixHQ {
         (ids, page_parser.has_next_page(), page_parser.total_pages())
     }
 
-    pub(crate) fn single_page(&self, media_html: String, id: &str, url: String) -> IMovieResult {
+    pub(crate) fn single_page(
+        &self,
+        media_html: String,
+        id: &str,
+        url: String,
+    ) -> FlixHQMovieResult {
         let fragment = create_html_fragment(&media_html);
 
         let search_parser = Search {
@@ -84,42 +132,23 @@ impl FlixHQ {
             elements: &fragment,
         };
 
-        IMovieResult {
+        FlixHQMovieResult {
             cover: search_parser.search_cover(),
             title: search_parser.search_title(),
-            other_names: None,
-            url: Some(url),
+            url,
             image: search_parser.search_image(),
             release_date: info_parser.info_label(3, "Released:").join(""),
             media_type: search_parser.search_media_type(),
-            id: Some(id.to_string()),
-        }
-    }
-
-    pub(crate) fn info_page(&self, info_html: String, search_result: IMovieResult) -> FlixHQInfo {
-        let fragment = create_html_fragment(&info_html);
-
-        let info_parser = Info {
-            elements: &fragment,
-        };
-
-        FlixHQInfo {
-            base: search_result,
-            info: IMovieInfo {
-                genres: Some(info_parser.info_label(2, "Genre:")),
-                description: info_parser.info_description(),
-                quality: info_parser.info_quality(),
-                rating: info_parser.info_rating(),
-                status: None,
-                duration: info_parser.info_duration(),
-                country: Some(info_parser.info_label(1, "Country:")),
-                production: Some(info_parser.info_label(4, "Production:")),
-                casts: Some(info_parser.info_label(5, "Casts:")),
-                tags: Some(info_parser.info_label(6, "Tags:")),
-                total_episodes: None,
-                seasons: None,
-                episodes: None,
-            },
+            id: id.to_string(),
+            genres: info_parser.info_label(2, "Genre:"),
+            description: info_parser.info_description(),
+            quality: info_parser.info_quality(),
+            rating: info_parser.info_rating(),
+            duration: info_parser.info_duration(),
+            country: info_parser.info_label(1, "Country:"),
+            production: info_parser.info_label(4, "Production:"),
+            casts: info_parser.info_label(5, "Casts:"),
+            tags: info_parser.info_label(6, "Tags:"),
         }
     }
 
@@ -157,7 +186,7 @@ impl FlixHQ {
         &self,
         query: &str,
         page: Option<usize>,
-    ) -> anyhow::Result<ISearch<IMovieResult>> {
+    ) -> anyhow::Result<ISearch<FlixHQMovieResult>> {
         let page = page.unwrap_or(1);
 
         let parsed_query = query.replace(' ', "-");
@@ -193,7 +222,7 @@ impl FlixHQ {
     /// Returns a future which resolves into an movie result object (*[`impl Future<Output = Result<IMovieResult>>`](https://github.com/carrotshniper21/consumet-api-rs/blob/main/src/models/types.rs#L452-L462)*)\
     /// # Parameters
     /// * `id` - the id of a movie or show
-    pub async fn fetch_search_result(&self, id: &str) -> anyhow::Result<IMovieResult> {
+    pub async fn fetch_search_result(&self, id: &str) -> anyhow::Result<FlixHQMovieResult> {
         let url = format!("{}/{}", BASE_URL, id);
 
         let media_html = reqwest::Client::new()
@@ -209,10 +238,10 @@ impl FlixHQ {
     /// Returns a future which resolves into an movie info object (including the episodes). (*[`impl Future<Output = Result<FlixHQInfo>>`](https://github.com/carrotshniper21/consumet-api-rs/blob/main/src/providers/movies/flixhq.rs#L22-L26)*)\
     /// # Parameters
     /// * `media_id` - takes media id or url as a parameter. (*media id or url can be found in the media search results as shown on the above method*)
-    pub async fn info(&self, media_id: &str) -> anyhow::Result<FlixHQInfo> {
+    pub async fn info(&self, media_id: &str) -> anyhow::Result<FlixhqSearchResult> {
         let search_result = self.fetch_search_result(media_id).await?;
 
-        let media_type = search_result.media_type.unwrap();
+        let media_type = search_result.media_type;
         let is_seasons = matches!(media_type, TvType::TvSeries);
 
         let info_html = reqwest::Client::new()
@@ -221,8 +250,6 @@ impl FlixHQ {
             .await?
             .text()
             .await?;
-
-        let info = self.info_page(info_html, search_result);
 
         if is_seasons {
             let id = media_id.split('-').last().unwrap_or_default().to_owned();
@@ -250,35 +277,39 @@ impl FlixHQ {
                 seasons_and_episodes.push(episodes.episodes);
             }
 
-            Ok(FlixHQInfo {
-                base: info.base,
-                info: IMovieInfo {
-                    total_episodes: seasons_and_episodes.last().map(|x| x.len()),
-                    seasons: Some(IMovieSeason {
-                        season: Some(
-                            seasons_and_episodes
-                                .last()
-                                .and_then(|x| x.last())
-                                .and_then(|y| y.season)
-                                .unwrap_or(0),
-                        ),
-                        image: None,
-                        episodes: Some(seasons_and_episodes.clone()),
-                    }),
-                    episodes: Some(seasons_and_episodes),
-                    ..info.info
-                },
-            })
+            Ok(FlixhqSearchResult::Tv(FlixHQShowResult {
+                total_episodes: seasons_and_episodes.last().map(|x| x.len()),
+                seasons: Some(IMovieSeason {
+                    season: Some(
+                        seasons_and_episodes
+                            .last()
+                            .and_then(|x| x.last())
+                            .and_then(|y| y.season)
+                            .unwrap_or(0),
+                    ),
+                    image: None,
+                    episodes: Some(seasons_and_episodes.clone()),
+                }),
+                episodes: Some(seasons_and_episodes),
+                id: search_result.id,
+                cover: search_result.cover,
+                title: search_result.title,
+                url: search_result.url,
+                image: search_result.image,
+                release_date: search_result.release_date,
+                media_type: search_result.media_type,
+                genres: search_result.genres,
+                description: search_result.description,
+                rating: search_result.rating,
+                quality: search_result.quality,
+                duration: search_result.duration,
+                country: search_result.country,
+                production: search_result.production,
+                casts: search_result.casts,
+                tags: search_result.tags,
+            }))
         } else {
-            Ok(FlixHQInfo {
-                base: info.base,
-                info: IMovieInfo {
-                    total_episodes: None,
-                    seasons: None,
-                    episodes: None,
-                    ..info.info
-                },
-            })
+            Ok(FlixhqSearchResult::Movie(search_result))
         }
     }
 
@@ -451,7 +482,7 @@ impl FlixHQ {
     /// Returns a future which resolves into an vector of movie results  (*[`impl Future<Output = Result<Vec<IMovieResult>>>`](https://github.com/carrotshniper21/consumet-api-rs/blob/main/src/models/types.rs#L452-L462)*)
     /// # Parameters
     /// * `None`
-    pub async fn recent_movies(&self) -> anyhow::Result<Vec<IMovieResult>> {
+    pub async fn recent_movies(&self) -> anyhow::Result<Vec<FlixHQMovieResult>> {
         let recent_html = reqwest::Client::new()
             .get(format!("{}/home", BASE_URL))
             .send()
@@ -475,7 +506,7 @@ impl FlixHQ {
     /// Returns a future which resolves into an vector of tv shows results  (*[`impl Future<Output = Result<Vec<IMovieResult>>>`](https://github.com/carrotshniper21/consumet-api-rs/blob/main/src/models/types.rs#L452-L462)*)
     /// # Parameters
     /// * `None`
-    pub async fn recent_shows(&self) -> anyhow::Result<Vec<IMovieResult>> {
+    pub async fn recent_shows(&self) -> anyhow::Result<Vec<FlixHQMovieResult>> {
         let recent_html = reqwest::Client::new()
             .get(format!("{}/home", BASE_URL))
             .send()
@@ -499,7 +530,7 @@ impl FlixHQ {
     /// Returns a future which resolves into an vector of movie results  (*[`impl Future<Output = Result<Vec<IMovieResult>>>`](https://github.com/carrotshniper21/consumet-api-rs/blob/main/src/models/types.rs#L452-L462)*)
     /// # Parameters
     /// * `None`
-    pub async fn trending_movies(&self) -> anyhow::Result<Vec<IMovieResult>> {
+    pub async fn trending_movies(&self) -> anyhow::Result<Vec<FlixHQMovieResult>> {
         let trending_html = reqwest::Client::new()
             .get(format!("{}/home", BASE_URL))
             .send()
@@ -523,7 +554,7 @@ impl FlixHQ {
     /// Returns a future which resolves into an vector of tv shows results  (*[`impl Future<Output = Result<Vec<IMovieResult>>>`](https://github.com/carrotshniper21/consumet-api-rs/blob/main/src/models/types.rs#L452-L462)*)
     /// # Parameters
     /// * `None`
-    pub async fn trending_shows(&self) -> anyhow::Result<Vec<IMovieResult>> {
+    pub async fn trending_shows(&self) -> anyhow::Result<Vec<FlixHQMovieResult>> {
         let trending_html = reqwest::Client::new()
             .get(format!("{}/home", BASE_URL))
             .send()
