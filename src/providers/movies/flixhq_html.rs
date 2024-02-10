@@ -1,5 +1,8 @@
-use super::flixhq::{FlixHQEpisode, FlixHQServer};
-use crate::models::types::TvType;
+use crate::{
+    models::types::TvType,
+    providers::movies::flixhq::{FlixHQEpisode, FlixHQServer},
+};
+
 use visdom::{types::Elements, Vis};
 
 pub fn create_html_fragment(page_html: &str) -> Elements<'_> {
@@ -17,12 +20,12 @@ impl<'a> Page<'a> {
         .has_class("active")
     }
 
-    pub fn total_pages(&self) -> Option<usize> {
-        self.elements .find("div.pre-pagination:nth-child(3) > nav:nth-child(1) > ul:nth-child(1) > li.page-item:last-child a").attr("href")?
+    pub fn total_pages(&self) -> usize {
+        self.elements.find("div.pre-pagination:nth-child(3) > nav:nth-child(1) > ul:nth-child(1) > li.page-item:last-child a").attr("href")?
         .to_string()
         .rsplit('=')
         .next()?
-        .parse::<usize>().ok()
+        .parse::<usize>().expect("")
     }
 
     pub fn page_ids(&self) -> Vec<Option<String>> {
@@ -43,13 +46,11 @@ pub struct Search<'page, 'b> {
 }
 
 impl<'page, 'b> Search<'page, 'b> {
-    pub fn search_image(&self) -> Option<String> {
-        Some(
-            self.elements
-                .find("div.m_i-d-poster > div > img")
-                .attr("src")?
-                .to_string(),
-        )
+    pub fn search_image(&self) -> String {
+        self.elements
+            .find("div.m_i-d-poster > div > img")
+            .attr("src")?
+            .to_string()
     }
 
     pub fn search_title(&self) -> String {
@@ -62,15 +63,13 @@ impl<'page, 'b> Search<'page, 'b> {
         .to_owned()
     }
 
-    pub fn search_cover(&self) -> Option<String> {
-        Some(
-            self.elements
-                .find("div.w_b-cover")
-                .attr("style")?
-                .to_string()
-                .replace("background-image: url(", "")
-                .replace(')', ""),
-        )
+    pub fn search_cover(&self) -> String {
+        self.elements
+            .find("div.w_b-cover")
+            .attr("style")?
+            .to_string()
+            .replace("background-image: url(", "")
+            .replace(')', "")
     }
 
     pub fn search_media_type(&self) -> TvType {
@@ -89,7 +88,7 @@ pub struct Info<'page, 'b> {
 }
 
 impl<'page, 'b> Info<'page, 'b> {
-    pub fn info_label(&self, index: usize, label: &str) -> Vec<String> {
+    pub fn label(&self, index: usize, label: &str) -> Vec<String> {
         self.elements
             .find(&format!(
                 "div.m_i-d-content > div.elements > div:nth-child({})",
@@ -102,11 +101,11 @@ impl<'page, 'b> Info<'page, 'b> {
             .collect()
     }
 
-    pub fn info_description(&self) -> String {
+    pub fn description(&self) -> String {
         self.elements.find("#main-wrapper > div.movie_information > div > div.m_i-detail > div.m_i-d-content > div.description").text().trim().to_owned()
     }
 
-    pub fn info_quality(&self) -> String {
+    pub fn quality(&self) -> String {
         self.elements
             .find("span.item:nth-child(1)")
             .text()
@@ -114,7 +113,7 @@ impl<'page, 'b> Info<'page, 'b> {
             .to_owned()
     }
 
-    pub fn info_rating(&self) -> String {
+    pub fn rating(&self) -> String {
         self.elements
             .find("span.item:nth-child(2)")
             .text()
@@ -122,7 +121,7 @@ impl<'page, 'b> Info<'page, 'b> {
             .to_owned()
     }
 
-    pub fn info_duration(&self) -> String {
+    pub fn duration(&self) -> String {
         self.elements
             .find("span.item:nth-child(3)")
             .text()
@@ -232,7 +231,7 @@ impl<'a> Server<'a> {
                 None
             };
 
-            Some(FlixHQServer{ name, url })
+            Some(FlixHQServer { name, url })
         })
     }
 }
