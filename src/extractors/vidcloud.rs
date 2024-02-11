@@ -1,20 +1,33 @@
-use crate::models::{ExtractConfig, ISubtitle, IVideo, VideoExtractor};
+use crate::models::{ExtractConfig, VideoExtractor};
 use crate::utils::{decrypt, util_funcs::USER_AGENT};
 use serde::{Deserialize, Serialize};
 
 /// Contains both the Decrypted Sources and Subtitles
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct VidCloud {
-    pub sources: Vec<IVideo>,
-    pub subtitles: Vec<ISubtitle>,
+    pub sources: Vec<VidCloudSource>,
+    pub subtitles: Vec<VidCloudSubtitle>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct VidCloudSubtitle {
+    pub url: String,
+    pub lang: String,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct VidCloudSource {
+    pub url: String,
+    pub quality: String,
+    pub is_m3u8: bool,
 }
 
 /// Contains the Subtitles for the Sources
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Tracks {
-    pub file: Option<String>,
-    pub label: Option<String>,
-    pub kind: Option<String>,
+    pub file: String,
+    pub label: String,
+    pub kind: String,
     pub default: Option<bool>,
 }
 
@@ -90,7 +103,7 @@ impl VideoExtractor for VidCloud {
                 File::DecryptedURL(sources)
             }
             _ => {
-                panic!("Unisquirrel told me not to do this!")
+                panic!("Please fix this") // Note: I will never fix this - eatmynerds
             }
         };
 
@@ -98,7 +111,7 @@ impl VideoExtractor for VidCloud {
             File::DecryptedURL(decrypted) => decrypted,
             File::EncryptedURL(encrypted) => {
                 let decrypt_key: Vec<(usize, usize)> = reqwest::Client::new()
-                    .get("https://raw.githubusercontent.com/carrotshniper21/key/e4/key.txt")
+                    .get("https://raw.githubusercontent.com/theonlymo/keys/e4/key")
                     .send()
                     .await?
                     .json()
@@ -128,15 +141,12 @@ impl VideoExtractor for VidCloud {
             }
         };
 
-        let mut temp_sources: Vec<IVideo> = vec![];
+        let mut temp_sources: Vec<VidCloudSource> = vec![];
 
-        self.sources.push(IVideo {
-            url: sources[0].file.clone(),
-            quality: Some("auto".to_string()),
-            is_m3u8: Some(sources[0].file.clone().unwrap().contains(".m3u8")),
-            is_dash: None,
-            size: None,
-            other: None,
+        self.sources.push(VidCloudSource {
+            url: sources[0].file.clone().unwrap(),
+            quality: "auto".to_string(),
+            is_m3u8: sources[0].file.clone().unwrap().contains(".m3u8"),
         });
 
         for source in sources {
@@ -169,30 +179,22 @@ impl VideoExtractor for VidCloud {
                 })
                 .collect();
 
-            temp_sources.extend(td_array.iter().map(|&(f1, f2)| IVideo {
-                url: Some(f2.to_string()),
-                quality: Some(f1.to_string()),
-                is_m3u8: Some(f2.contains(".m3u8")),
-                is_dash: None,
-                size: None,
-                other: None,
+            temp_sources.extend(td_array.iter().map(|&(f1, f2)| VidCloudSource {
+                url: f2.to_string(),
+                quality: f1.to_string(),
+                is_m3u8: f2.contains(".m3u8"),
             }));
 
             self.sources.extend(temp_sources.iter().cloned());
         }
 
-        let subtitles: Vec<ISubtitle> = encrypted_sources
+        let subtitles: Vec<VidCloudSubtitle> = encrypted_sources
             .tracks
             .unwrap()
             .iter()
-            .map(|s| ISubtitle {
-                id: None,
+            .map(|s| VidCloudSubtitle {
                 url: s.file.clone(),
-                lang: if s.label.is_some() {
-                    s.label.clone()
-                } else {
-                    Some("Default (maybe)".to_string())
-                },
+                lang: s.label.clone(),
             })
             .collect();
 

@@ -14,4 +14,3 @@ Cargo.lock
 *.pdb
 .idea/
 .vscode/
-main.rs
