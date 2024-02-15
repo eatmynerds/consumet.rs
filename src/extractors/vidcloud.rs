@@ -1,6 +1,17 @@
 use crate::models::{ExtractConfig, VideoExtractor};
 use crate::utils::{decrypt, util_funcs::USER_AGENT};
+use openssl::base64;
 use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Root {
+    pub rabbitstream: Rabbitstream,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Rabbitstream {
+    pub keys: Vec<u8>,
+}
 
 /// Contains both the Decrypted Sources and Subtitles
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -110,30 +121,19 @@ impl VideoExtractor for VidCloud {
         let sources = match url {
             File::DecryptedURL(decrypted) => decrypted,
             File::EncryptedURL(encrypted) => {
-                println!("{}", encrypted);
-
-                let decrypt_key: Vec<(usize, usize)> = reqwest::Client::new()
-                    .get("https://raw.githubusercontent.com/theonlymo/keys/e4/key")
+                let decrypt_key: String = reqwest::Client::new()
+                    .get("https://keys4.fun")
                     .send()
                     .await?
-                    .json()
+                    .text()
                     .await?;
 
-                let mut encrypted_url_temp = encrypted.chars().collect::<Vec<char>>();
+                // P.S: Remember unwrap and expect is only okay since these are tests
+                let key_json: Root = serde_json::from_str(&decrypt_key)?;
 
-                let mut key = String::new();
+                let key_string = base64::encode_block(&key_json.rabbitstream.keys);
 
-                for (start, end) in decrypt_key {
-                    for var in &mut encrypted_url_temp[start..end] {
-                        key.push(*var);
-                        *var = '\0';
-                    }
-                }
-
-                encrypted_url_temp.retain(|x| *x != '\0');
-
-                let encrypted_url = encrypted_url_temp.into_iter().collect::<String>();
-                let decrypted_str = decrypt::decrypt_url(&encrypted_url, &key.into_bytes())
+                let decrypted_str = decrypt::decrypt_url(&encrypted, &key_string.into_bytes())
                     .expect("Unable to decrypt URL");
 
                 let decrypted: Vec<Video> =

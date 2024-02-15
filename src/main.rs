@@ -1,5 +1,4 @@
 use consumet::{
-    extractors::{MixDrop, VidCloud},
     models::StreamingServers,
     providers::movies,
     providers::movies::flixhq::{FlixHQSearchResult, FlixHQStreamingServers},
@@ -11,11 +10,10 @@ use std::process::Command;
 async fn main() -> anyhow::Result<()> {
     // Create a new instance of the FlixHQ provider
     let flixhq = movies::FlixHQ;
+    //
     // Search for a movie. In this case, "Vincenzo"
-    // let data = flixhq.search("Vincenzo", None).await?;
-    // let movie_id = &data.results[0].id;
-
-    let movie_id = "movie/watch-puss-in-boots-the-last-wish-91342";
+    let data = flixhq.search("Vincenzo", None).await?;
+    let movie_id = &data.results[0].id;
 
     let movie_info = flixhq.info(&movie_id).await?;
 
@@ -27,9 +25,14 @@ async fn main() -> anyhow::Result<()> {
 
             let servers = flixhq.servers(&episode_id, &media_id).await?;
 
-            // Get the video sources from vidcloud
+            let chosen_server = match servers.servers[0].name.as_str() {
+                "UpCloud" => StreamingServers::UpCloud,
+                _ => todo!()
+            };
+
+            // Get the video sources from UpCloud
             let sources = flixhq
-                .sources(&episode_id, &media_id, Some(StreamingServers::VidCloud))
+                .sources(&episode_id, &media_id, Some(chosen_server))
                 .await?;
 
             match sources.sources {
