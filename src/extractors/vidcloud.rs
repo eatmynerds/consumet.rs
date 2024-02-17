@@ -3,16 +3,6 @@ use crate::utils::{decrypt, util_funcs::USER_AGENT};
 use openssl::base64;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Root {
-    pub rabbitstream: Rabbitstream,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Rabbitstream {
-    pub keys: Vec<u8>,
-}
-
 /// Contains both the Decrypted Sources and Subtitles
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct VidCloud {
@@ -122,16 +112,15 @@ impl VideoExtractor for VidCloud {
             File::DecryptedURL(decrypted) => decrypted,
             File::EncryptedURL(encrypted) => {
                 let decrypt_key: String = reqwest::Client::new()
-                    .get("https://keys4.fun")
+                    .get("https://raw.githubusercontent.com/eatmynerds/key/e4/key.txt")
                     .send()
                     .await?
                     .text()
                     .await?;
 
-                // P.S: Remember unwrap and expect is only okay since these are tests
-                let key_json: Root = serde_json::from_str(&decrypt_key)?;
+                let key_json: Vec<u8> = serde_json::from_str(&decrypt_key)?;
 
-                let key_string = base64::encode_block(&key_json.rabbitstream.keys);
+                let key_string = base64::encode_block(&key_json);
 
                 let decrypted_str = decrypt::decrypt_url(&encrypted, &key_string.into_bytes())
                     .expect("Unable to decrypt URL");
