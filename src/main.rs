@@ -4,8 +4,6 @@ use consumet::{
     providers::movies::flixhq::{FlixHQSearchResult, FlixHQStreamingServers},
 };
 
-use std::process::Command;
-
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     // Create a new instance of the FlixHQ provider
@@ -37,10 +35,7 @@ async fn main() -> anyhow::Result<()> {
 
             match sources.sources {
                 FlixHQStreamingServers::VidCloud(embed_links) => {
-                    let _ = Command::new("mpv")
-                        .arg(&embed_links[0].url)
-                        .spawn()
-                        .unwrap();
+                    println!("{:#?}", embed_links);
                 }
                 FlixHQStreamingServers::MixDrop(_) => {}
             }
@@ -50,7 +45,7 @@ async fn main() -> anyhow::Result<()> {
 
             let episode_id = media_id.rsplit("-").collect::<Vec<&str>>()[0];
 
-            let servers = flixhq.servers(episode_id, &media_id).await?;
+            let _servers = flixhq.servers(episode_id, &media_id).await?;
 
             let sources = flixhq
                 .sources(episode_id, &media_id, Some(StreamingServers::VidCloud))
@@ -58,10 +53,7 @@ async fn main() -> anyhow::Result<()> {
 
             match sources.sources {
                 FlixHQStreamingServers::VidCloud(embed_links) => {
-                    let _ = Command::new("mpv")
-                        .arg(&embed_links[0].url)
-                        .spawn()
-                        .unwrap();
+                    println!("{:#?}", embed_links);
                 }
                 FlixHQStreamingServers::MixDrop(_) => {}
             }
