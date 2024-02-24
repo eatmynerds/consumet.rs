@@ -99,7 +99,6 @@ println!("{:#?}", data);
 returns a future which resolves into an enum containing extra media info (including the episodes). (*[`impl Future<Output = Result<FlixHQInfo>>`](https://github.com/eatmynerds/consumet.rs/blob/master/src/providers/movies/flixhq.rs#L22-L26)*)\
 output:
 ```rust
-i
 Tv(
     FlixHQShow {
         id: "tv/watch-vincenzo-67955",
