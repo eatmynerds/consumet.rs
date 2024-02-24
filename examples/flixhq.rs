@@ -1,8 +1,9 @@
 use consumet::{
     models::StreamingServers,
     providers::movies,
-    providers::movies::flixhq::{FlixHQInfo, FlixHQStreamingServers},
+    providers::movies::flixhq::{FlixHQInfo, FlixHQSourceType},
 };
+use std::process::Command;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -33,13 +34,13 @@ async fn main() -> anyhow::Result<()> {
                 .await?;
 
             match sources.sources {
-                FlixHQStreamingServers::VidCloud(embed_links) => {
+                FlixHQSourceType::VidCloud(embed_links) => {
                     let _ = Command::new("mpv")
                         .arg(&embed_links[0].url)
                         .spawn()
                         .unwrap();
                 }
-                FlixHQStreamingServers::MixDrop(_) => {}
+                FlixHQSourceType::MixDrop(_) => {}
             }
         }
         FlixHQInfo::Movie(movie) => {
@@ -60,13 +61,13 @@ async fn main() -> anyhow::Result<()> {
                 .await?;
 
             match sources.sources {
-                FlixHQStreamingServers::VidCloud(embed_links) => {
+                FlixHQSourceType::VidCloud(embed_links) => {
                     let _ = Command::new("mpv")
                         .arg(&embed_links[0].url)
                         .spawn()
                         .unwrap();
                 }
-                FlixHQStreamingServers::MixDrop(_) => {}
+                FlixHQSourceType::MixDrop(_) => {}
             }
         }
     }

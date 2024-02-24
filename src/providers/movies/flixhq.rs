@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 pub struct FlixHQ;
 
 #[derive(Debug, Deserialize, Serialize)]
-pub enum FlixHQStreamingServers {
+pub enum FlixHQSourceType {
     VidCloud(Vec<VidCloudSource>),
     MixDrop(Vec<MixDropSource>),
 }
@@ -24,10 +24,10 @@ pub enum FlixHQSubtitles {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct FlixHQSource {
+pub struct FlixHQSources {
     pub headers: String,
     pub subtitles: FlixHQSubtitles,
-    pub sources: FlixHQStreamingServers,
+    pub sources: FlixHQSourceType,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -305,7 +305,7 @@ impl FlixHQ {
         Ok(FlixHQServers { servers })
     }
 
-    /// Returns a future which resolves into FlixHQSource. (*[`impl Future<Output = Result<FlixHQSource>>`](https://github.com/eatmynerds/consumet.rs/blob/master/src/providers/movies/flixhq.rs#L26-L31)*)\
+    /// Returns a future which resolves into FlixHQSources. (*[`impl Future<Output = Result<FlixHQSources>>`](https://github.com/eatmynerds/consumet.rs/blob/master/src/providers/movies/flixhq.rs#L26-L31)*)\
     /// # Parameters
     /// * `episode_id` - takes episode id as a parameter. (*episode id can be found in the media info object*)
     /// * `media_id` - takes media id as a parameter. (*media id can be found in the media info object*)
@@ -315,7 +315,7 @@ impl FlixHQ {
         episode_id: &str,
         media_id: &str,
         server: Option<StreamingServers>,
-    ) -> anyhow::Result<FlixHQSource> {
+    ) -> anyhow::Result<FlixHQSources> {
         let server: StreamingServers = server.unwrap_or(StreamingServers::UpCloud);
         let servers = self.servers(episode_id, media_id).await?;
 
@@ -362,8 +362,8 @@ impl FlixHQ {
                     )
                     .await?;
 
-                Ok(FlixHQSource {
-                    sources: FlixHQStreamingServers::MixDrop(mix_drop.sources),
+                Ok(FlixHQSources {
+                    sources: FlixHQSourceType::MixDrop(mix_drop.sources),
                     subtitles: FlixHQSubtitles::MixDrop(mix_drop.subtitles),
                     headers: server_info.link,
                 })
@@ -384,8 +384,8 @@ impl FlixHQ {
                     )
                     .await?;
 
-                Ok(FlixHQSource {
-                    sources: FlixHQStreamingServers::VidCloud(vid_cloud.sources),
+                Ok(FlixHQSources {
+                    sources: FlixHQSourceType::VidCloud(vid_cloud.sources),
                     subtitles: FlixHQSubtitles::VidCloud(vid_cloud.subtitles),
                     headers: server_info.link,
                 })
@@ -405,8 +405,8 @@ impl FlixHQ {
                     )
                     .await?;
 
-                Ok(FlixHQSource {
-                    sources: FlixHQStreamingServers::VidCloud(vid_cloud.sources),
+                Ok(FlixHQSources {
+                    sources: FlixHQSourceType::VidCloud(vid_cloud.sources),
                     subtitles: FlixHQSubtitles::VidCloud(vid_cloud.subtitles),
                     headers: server_info.link,
                 })
@@ -427,8 +427,8 @@ impl FlixHQ {
                     )
                     .await?;
 
-                Ok(FlixHQSource {
-                    sources: FlixHQStreamingServers::VidCloud(vid_cloud.sources),
+                Ok(FlixHQSources {
+                    sources: FlixHQSourceType::VidCloud(vid_cloud.sources),
                     subtitles: FlixHQSubtitles::VidCloud(vid_cloud.subtitles),
                     headers: server_info.link,
                 })
