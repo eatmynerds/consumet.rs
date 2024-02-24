@@ -6,10 +6,8 @@ use consumet::{
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    // Create a new instance of the FlixHQ provider
     let flixhq = movies::FlixHQ;
 
-    // Search for a movie. In this case, "Vincenzo"
     let data = flixhq.search("Vincenzo", None).await?;
 
     let movie_id = &data.results[0].id;
@@ -19,7 +17,7 @@ async fn main() -> anyhow::Result<()> {
     match movie_info {
         FlixHQInfo::Tv(show) => {
             let media_id = show.id;
-            // Get the first episodes id
+
             let episode_id = &show.seasons.episodes[0][0].id;
 
             let servers = flixhq.servers(&episode_id, &media_id).await?;
@@ -27,17 +25,19 @@ async fn main() -> anyhow::Result<()> {
             let chosen_server = match servers.servers[0].name.as_str() {
                 "UpCloud" => StreamingServers::UpCloud,
                 "VidCloud" => StreamingServers::VidCloud,
-                _ => todo!()
+                _ => todo!(),
             };
 
-            // Get the video sources from UpCloud
             let sources = flixhq
                 .sources(&episode_id, &media_id, Some(chosen_server))
                 .await?;
 
             match sources.sources {
                 FlixHQStreamingServers::VidCloud(embed_links) => {
-                    println!("{:#?}", embed_links);
+                    let _ = Command::new("mpv")
+                        .arg(&embed_links[0].url)
+                        .spawn()
+                        .unwrap();
                 }
                 FlixHQStreamingServers::MixDrop(_) => {}
             }
@@ -52,7 +52,7 @@ async fn main() -> anyhow::Result<()> {
             let chosen_server = match servers.servers[0].name.as_str() {
                 "UpCloud" => StreamingServers::UpCloud,
                 "VidCloud" => StreamingServers::VidCloud,
-                _ => todo!()
+                _ => todo!(),
             };
 
             let sources = flixhq
@@ -61,7 +61,10 @@ async fn main() -> anyhow::Result<()> {
 
             match sources.sources {
                 FlixHQStreamingServers::VidCloud(embed_links) => {
-                    println!("{:#?}", embed_links);
+                    let _ = Command::new("mpv")
+                        .arg(&embed_links[0].url)
+                        .spawn()
+                        .unwrap();
                 }
                 FlixHQStreamingServers::MixDrop(_) => {}
             }
