@@ -51,11 +51,17 @@ cargo install consumet
 ```rs
 use consumet::providers::movies;
 
-// Create a new instance of the FlixHQ provider
-let flixhq = movies::FlixHQ;
-// Search for a movie. In this case, "Vincenzo"
-let data = flixhq.search("Vincenzo", None).await?;
-println!("{:#?}", data);
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    // Create a new instance of the FlixHQ provider
+    let flixhq = movies::FlixHQ;
+
+    // Search for a movie. In this case, "Vincenzo"
+    let data = flixhq.search("Vincenzo", None).await?;
+    println!("{:#?}", data);
+
+    Ok(())
+}
 ```
 
 Do you want to know more? Head to the [`Getting Started`](https://github.com/eatmynerds/consumet.rs/tree/master/docs/guides/getting-started.md).

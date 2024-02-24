@@ -61,17 +61,11 @@ pub struct FlixHQSearchResults {
     pub has_next_page: bool,
     pub total_pages: usize,
     pub total_results: usize,
-    pub results: Vec<FlixHQMovieResult>,
+    pub results: Vec<FlixHQResult>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-pub enum FlixHQSearchResult {
-    Tv(FlixHQShowResult),
-    Movie(FlixHQMovieResult),
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct FlixHQMovieResult {
+pub struct FlixHQResult {
     pub id: String,
     pub cover: String,
     pub title: String,
@@ -91,7 +85,33 @@ pub struct FlixHQMovieResult {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct FlixHQShowResult {
+pub enum FlixHQInfo {
+    Tv(FlixHQShow),
+    Movie(FlixHQMovie),
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct FlixHQMovie {
+    pub id: String,
+    pub cover: String,
+    pub title: String,
+    pub url: String,
+    pub image: String,
+    pub release_date: String,
+    pub media_type: TvType,
+    pub genres: Vec<String>,
+    pub description: String,
+    pub rating: String,
+    pub quality: String,
+    pub duration: String,
+    pub country: Vec<String>,
+    pub production: Vec<String>,
+    pub casts: Vec<String>,
+    pub tags: Vec<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct FlixHQShow {
     pub id: String,
     pub cover: String,
     pub title: String,
@@ -168,7 +188,7 @@ impl FlixHQ {
     /// Returns a future which resolves into an movie info object (including the episodes). (*[`impl Future<Output = Result<FlixHQInfo>>`](https://github.com/carrotshniper21/consumet-api-rs/blob/main/src/providers/movies/flixhq.rs#L22-L26)*)\
     /// # Parameters
     /// * `media_id` - takes media id or url as a parameter. (*media id or url can be found in the media search results as shown on the above method*)
-    pub async fn info(&self, media_id: &str) -> anyhow::Result<FlixHQSearchResult> {
+    pub async fn info(&self, media_id: &str) -> anyhow::Result<FlixHQInfo> {
         let info_html = reqwest::Client::new()
             .get(format!("{}/{}", BASE_URL, media_id))
             .send()
@@ -208,7 +228,7 @@ impl FlixHQ {
                 seasons_and_episodes.push(episodes.episodes);
             }
 
-            Ok(FlixHQSearchResult::Tv(FlixHQShowResult {
+            Ok(FlixHQInfo::Tv(FlixHQShow {
                 total_episodes: seasons_and_episodes.last().map(|x| x.len()).unwrap(),
                 seasons: FlixHQSeason {
                     total_seasons: seasons_and_episodes.len(),
@@ -232,7 +252,24 @@ impl FlixHQ {
                 tags: search_result.tags,
             }))
         } else {
-            Ok(FlixHQSearchResult::Movie(search_result))
+            Ok(FlixHQInfo::Movie(FlixHQMovie {
+                id: search_result.id,
+                cover: search_result.cover,
+                title: search_result.title,
+                url: search_result.url,
+                image: search_result.image,
+                release_date: search_result.release_date,
+                media_type: search_result.media_type,
+                genres: search_result.genres,
+                description: search_result.description,
+                rating: search_result.rating,
+                quality: search_result.quality,
+                duration: search_result.duration,
+                country: search_result.country,
+                production: search_result.production,
+                casts: search_result.casts,
+                tags: search_result.tags,
+            }))
         }
     }
 
@@ -398,7 +435,7 @@ impl FlixHQ {
     /// Returns a future which resolves into an vector of movie results  (*[`impl Future<Output = Result<Vec<IMovieResult>>>`](https://github.com/carrotshniper21/consumet-api-rs/blob/main/src/models/types.rs#L452-L462)*)
     /// # Parameters
     /// * `None`
-    pub async fn recent_movies(&self) -> anyhow::Result<Vec<FlixHQMovieResult>> {
+    pub async fn recent_movies(&self) -> anyhow::Result<Vec<FlixHQResult>> {
         let recent_html = reqwest::Client::new()
             .get(format!("{}/home", BASE_URL))
             .send()
@@ -429,7 +466,7 @@ impl FlixHQ {
     /// Returns a future which resolves into an vector of tv shows results  (*[`impl Future<Output = Result<Vec<IMovieResult>>>`](https://github.com/carrotshniper21/consumet-api-rs/blob/main/src/models/types.rs#L452-L462)*)
     /// # Parameters
     /// * `None`
-    pub async fn recent_shows(&self) -> anyhow::Result<Vec<FlixHQMovieResult>> {
+    pub async fn recent_shows(&self) -> anyhow::Result<Vec<FlixHQResult>> {
         let recent_html = reqwest::Client::new()
             .get(format!("{}/home", BASE_URL))
             .send()
@@ -460,7 +497,7 @@ impl FlixHQ {
     /// Returns a future which resolves into an vector of movie results  (*[`impl Future<Output = Result<Vec<IMovieResult>>>`](https://github.com/carrotshniper21/consumet-api-rs/blob/main/src/models/types.rs#L452-L462)*)
     /// # Parameters
     /// * `None`
-    pub async fn trending_movies(&self) -> anyhow::Result<Vec<FlixHQMovieResult>> {
+    pub async fn trending_movies(&self) -> anyhow::Result<Vec<FlixHQResult>> {
         let trending_html = reqwest::Client::new()
             .get(format!("{}/home", BASE_URL))
             .send()
@@ -491,7 +528,7 @@ impl FlixHQ {
     /// Returns a future which resolves into an vector of tv shows results  (*[`impl Future<Output = Result<Vec<IMovieResult>>>`](https://github.com/carrotshniper21/consumet-api-rs/blob/main/src/models/types.rs#L452-L462)*)
     /// # Parameters
     /// * `None`
-    pub async fn trending_shows(&self) -> anyhow::Result<Vec<FlixHQMovieResult>> {
+    pub async fn trending_shows(&self) -> anyhow::Result<Vec<FlixHQResult>> {
         let trending_html = reqwest::Client::new()
             .get(format!("{}/home", BASE_URL))
             .send()

@@ -1,5 +1,7 @@
-use crate::models::{ExtractConfig, VideoExtractor};
-use crate::utils::{decrypt, util_funcs::USER_AGENT};
+use crate::{
+    models::{ExtractConfig, VideoExtractor},
+    utils::{decrypt, util_funcs::USER_AGENT},
+};
 use openssl::base64;
 use serde::{Deserialize, Serialize};
 
@@ -109,7 +111,7 @@ impl VideoExtractor for VidCloud {
         };
 
         let sources = match url {
-            File::DecryptedURL(decrypted) => decrypted,
+            File::DecryptedURL(decrypted) => dbg!(decrypted),
             File::EncryptedURL(encrypted) => {
                 let decrypt_key: String = reqwest::Client::new()
                     .get("https://raw.githubusercontent.com/eatmynerds/key/e4/key.txt")

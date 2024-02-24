@@ -1,6 +1,6 @@
 use crate::{
     models::types::TvType,
-    providers::movies::flixhq::{FlixHQ, FlixHQEpisode, FlixHQMovieResult, FlixHQServer, BASE_URL},
+    providers::movies::flixhq::{FlixHQ, FlixHQEpisode, FlixHQResult, FlixHQServer, BASE_URL},
 };
 
 use visdom::{types::Elements, Vis};
@@ -11,7 +11,7 @@ pub trait FlixHQHTML {
     fn parse_trending_movies(&self, trending_html: String) -> Vec<Option<String>>;
     fn parse_trending_shows(&self, trending_html: String) -> Vec<Option<String>>;
     fn parse_search(&self, page_html: String) -> (Vec<Option<String>>, bool, usize);
-    fn single_page(&self, media_html: String, id: &str, url: String) -> FlixHQMovieResult;
+    fn single_page(&self, media_html: String, id: &str, url: String) -> FlixHQResult;
     fn info_season(&self, season_html: String) -> Vec<String>;
     fn info_episode(&self, episode_html: String, index: usize) -> Episodes;
     fn info_server(&self, server_html: String, media_id: &str) -> Vec<FlixHQServer>;
@@ -59,7 +59,7 @@ impl FlixHQHTML for FlixHQ {
         (ids, page_parser.has_next_page(), page_parser.total_pages())
     }
 
-    fn single_page(&self, media_html: String, id: &str, url: String) -> FlixHQMovieResult {
+    fn single_page(&self, media_html: String, id: &str, url: String) -> FlixHQResult {
         let fragment = create_html_fragment(&media_html);
 
         let search_parser = Search {
@@ -71,7 +71,7 @@ impl FlixHQHTML for FlixHQ {
             elements: &fragment,
         };
 
-        FlixHQMovieResult {
+        FlixHQResult {
             cover: search_parser.cover(),
             title: search_parser.title(),
             url,

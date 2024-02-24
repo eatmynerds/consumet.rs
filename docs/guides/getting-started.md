@@ -23,14 +23,18 @@ use consumet::providers::movies;
 async fn main() -> anyhow::Result<()> {
     // Create a new instance of the flixhq provider
     let flixhq = movies::FlixHQ;
+
     // Search for a movie. In this case, "Vincenzo"
     let results = flixhq.search("Vincenzo", None).await?;
+
     // Print the results
     println!("{:#?}", results);
 
+    let movie_id = &results.results[0].id;
+
     // Get the first movie info
-    let first_movie = results.results[0].id.clone().expect("No id found!");
-    let movie_info = flixhq.info(first_movie.as_str()).await?;
+    let movie_info = flixhq.info(&movie_id).await?;
+
     // Print the info
     println!("{:#?}", movie_info);
 
