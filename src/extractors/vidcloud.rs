@@ -111,7 +111,7 @@ impl VideoExtractor for VidCloud {
         };
 
         let sources = match url {
-            File::DecryptedURL(decrypted) => dbg!(decrypted),
+            File::DecryptedURL(decrypted) => decrypted,
             File::EncryptedURL(encrypted) => {
                 let decrypt_key: String = reqwest::Client::new()
                     .get("https://raw.githubusercontent.com/eatmynerds/key/e4/key.txt")
