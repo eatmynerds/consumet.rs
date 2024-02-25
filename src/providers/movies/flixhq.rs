@@ -142,7 +142,6 @@ pub struct FlixHQServerInfo {
 }
 
 pub const BASE_URL: &'static str = "https://flixhq.to";
-
 lazy_static! {
     static ref CLIENT: Client = Client::new();
 }
@@ -179,8 +178,11 @@ impl FlixHQ {
             urls.push(url);
         }
 
-        let bodies = stream::iter(urls.clone())
-            .enumerate()
+        let urls_clone = Arc::new(urls.clone());
+
+        let results: Arc<Mutex<Vec<FlixHQResult>>> = Arc::new(Mutex::new(Vec::new()));
+
+        stream::iter(urls.iter().enumerate())
             .map(|(index, url)| {
                 let client = &CLIENT;
                 async move {
@@ -188,24 +190,20 @@ impl FlixHQ {
                     resp.text().await.map(|text| (index, text))
                 }
             })
-            .buffer_unordered(urls.len());
-
-        let results: Arc<Mutex<Vec<FlixHQResult>>> = Arc::new(Mutex::new(Vec::new()));
-
-        bodies
+            .buffer_unordered(urls.len())
             .for_each(|result| {
-                let urls = urls.clone(); // Clone urls again for each closure
+                let urls_clone = Arc::clone(&urls_clone);
                 let results = Arc::clone(&results);
                 async move {
                     match result {
                         Ok((index, text)) => {
-                            let url = &urls[index];
-                            let id = url.splitn(4, "/").collect::<Vec<&str>>()[3];
-                            let result = self.single_page(text, id, url.to_string()); // Assuming single_page function is defined somewhere
+                            let url = &urls_clone[index];
+                            let id = url.splitn(4, "/").nth(3).expect("Invalid URL format");
+                            let result = self.single_page(text, id, url.to_string());
                             results.lock().unwrap().push(result);
                         }
                         Err(err) => {
-                            eprintln!("Error processing url: {}", err);
+                            eprintln!("Error processing URL: {}", err);
                         }
                     }
                 }
@@ -227,7 +225,7 @@ impl FlixHQ {
     /// # Parameters
     /// * `media_id` - takes media id or url as a parameter. (*media id or url can be found in the media search results as shown on the above method*)
     pub async fn info(&self, media_id: &str) -> anyhow::Result<FlixHQInfo> {
-        let info_html = reqwest::Client::new()
+        let info_html = CLIENT
             .get(format!("{}/{}", BASE_URL, media_id))
             .send()
             .await?
@@ -243,7 +241,7 @@ impl FlixHQ {
         if is_seasons {
             let id = media_id.split('-').last().unwrap_or_default().to_owned();
 
-            let season_html = reqwest::Client::new()
+            let season_html = CLIENT
                 .get(format!("{}/ajax/v2/tv/seasons/{}", BASE_URL, id))
                 .send()
                 .await?
@@ -255,7 +253,7 @@ impl FlixHQ {
             let mut seasons_and_episodes = vec![];
 
             for (i, episode) in season_ids.iter().enumerate() {
-                let episode_html = reqwest::Client::new()
+                let episode_html = CLIENT
                     .get(format!("{}/ajax/v2/season/episodes/{}", BASE_URL, &episode))
                     .send()
                     .await?
@@ -327,12 +325,7 @@ impl FlixHQ {
             }
         );
 
-        let server_html = reqwest::Client::new()
-            .get(episode_id)
-            .send()
-            .await?
-            .text()
-            .await?;
+        let server_html = CLIENT.get(episode_id).send().await?.text().await?;
 
         let servers = self.info_server(server_html, media_id);
 
@@ -371,7 +364,7 @@ impl FlixHQ {
             .copied()
             .unwrap_or_default();
 
-        let server_json = reqwest::Client::new()
+        let server_json = CLIENT
             .get(format!("{}/ajax/get_link/{}", BASE_URL, server_id))
             .send()
             .await?
@@ -474,7 +467,7 @@ impl FlixHQ {
     /// # Parameters
     /// * `None`
     pub async fn recent_movies(&self) -> anyhow::Result<Vec<FlixHQResult>> {
-        let recent_html = reqwest::Client::new()
+        let recent_html = CLIENT
             .get(format!("{}/home", BASE_URL))
             .send()
             .await?
@@ -483,20 +476,46 @@ impl FlixHQ {
 
         let ids = self.parse_recent_movies(recent_html);
 
-        let mut results = vec![];
+        let mut urls = vec![];
 
         for id in ids.iter().flatten() {
-            let media_html = reqwest::Client::new()
-                .get(format!("{}/{}", BASE_URL, id))
-                .send()
-                .await?
-                .text()
-                .await?;
-
-            let result = self.single_page(media_html, id, format!("{}/{}", BASE_URL, id));
-
-            results.push(result);
+            let url = format!("{}/{}", BASE_URL, id);
+            urls.push(url);
         }
+
+        let urls_clone = Arc::new(urls.clone());
+
+        let results: Arc<Mutex<Vec<FlixHQResult>>> = Arc::new(Mutex::new(Vec::new()));
+
+        stream::iter(urls.iter().enumerate())
+            .map(|(index, url)| {
+                let client = &CLIENT;
+                async move {
+                    let resp = client.get(url).send().await?;
+                    resp.text().await.map(|text| (index, text))
+                }
+            })
+            .buffer_unordered(urls.len())
+            .for_each(|result| {
+                let urls_clone = Arc::clone(&urls_clone);
+                let results = Arc::clone(&results);
+                async move {
+                    match result {
+                        Ok((index, text)) => {
+                            let url = &urls_clone[index];
+                            let id = url.splitn(4, "/").nth(3).expect("Invalid URL format");
+                            let result = self.single_page(text, id, url.to_string());
+                            results.lock().unwrap().push(result);
+                        }
+                        Err(err) => {
+                            eprintln!("Error processing URL: {}", err);
+                        }
+                    }
+                }
+            })
+            .await;
+
+        let results = Arc::try_unwrap(results).unwrap().into_inner().unwrap();
 
         Ok(results)
     }
@@ -505,7 +524,7 @@ impl FlixHQ {
     /// # Parameters
     /// * `None`
     pub async fn recent_shows(&self) -> anyhow::Result<Vec<FlixHQResult>> {
-        let recent_html = reqwest::Client::new()
+        let recent_html = CLIENT
             .get(format!("{}/home", BASE_URL))
             .send()
             .await?
@@ -514,20 +533,46 @@ impl FlixHQ {
 
         let ids = self.parse_recent_shows(recent_html);
 
-        let mut results = vec![];
+        let mut urls = vec![];
 
         for id in ids.iter().flatten() {
-            let media_html = reqwest::Client::new()
-                .get(format!("{}/{}", BASE_URL, id))
-                .send()
-                .await?
-                .text()
-                .await?;
-
-            let result = self.single_page(media_html, id, format!("{}/{}", BASE_URL, id));
-
-            results.push(result);
+            let url = format!("{}/{}", BASE_URL, id);
+            urls.push(url);
         }
+
+        let urls_clone = Arc::new(urls.clone());
+
+        let results: Arc<Mutex<Vec<FlixHQResult>>> = Arc::new(Mutex::new(Vec::new()));
+
+        stream::iter(urls.iter().enumerate())
+            .map(|(index, url)| {
+                let client = &CLIENT;
+                async move {
+                    let resp = client.get(url).send().await?;
+                    resp.text().await.map(|text| (index, text))
+                }
+            })
+            .buffer_unordered(urls.len())
+            .for_each(|result| {
+                let urls_clone = Arc::clone(&urls_clone);
+                let results = Arc::clone(&results);
+                async move {
+                    match result {
+                        Ok((index, text)) => {
+                            let url = &urls_clone[index];
+                            let id = url.splitn(4, "/").nth(3).expect("Invalid URL format");
+                            let result = self.single_page(text, id, url.to_string());
+                            results.lock().unwrap().push(result);
+                        }
+                        Err(err) => {
+                            eprintln!("Error processing URL: {}", err);
+                        }
+                    }
+                }
+            })
+            .await;
+
+        let results = Arc::try_unwrap(results).unwrap().into_inner().unwrap();
 
         Ok(results)
     }
@@ -536,7 +581,7 @@ impl FlixHQ {
     /// # Parameters
     /// * `None`
     pub async fn trending_movies(&self) -> anyhow::Result<Vec<FlixHQResult>> {
-        let trending_html = reqwest::Client::new()
+        let trending_html = CLIENT
             .get(format!("{}/home", BASE_URL))
             .send()
             .await?
@@ -545,20 +590,46 @@ impl FlixHQ {
 
         let ids = self.parse_trending_movies(trending_html);
 
-        let mut results = vec![];
+        let mut urls = vec![];
 
         for id in ids.iter().flatten() {
-            let media_html = reqwest::Client::new()
-                .get(format!("{}/{}", BASE_URL, id))
-                .send()
-                .await?
-                .text()
-                .await?;
-
-            let result = self.single_page(media_html, id, format!("{}/{}", BASE_URL, id));
-
-            results.push(result);
+            let url = format!("{}/{}", BASE_URL, id);
+            urls.push(url);
         }
+
+        let urls_clone = Arc::new(urls.clone());
+
+        let results: Arc<Mutex<Vec<FlixHQResult>>> = Arc::new(Mutex::new(Vec::new()));
+
+        stream::iter(urls.iter().enumerate())
+            .map(|(index, url)| {
+                let client = &CLIENT;
+                async move {
+                    let resp = client.get(url).send().await?;
+                    resp.text().await.map(|text| (index, text))
+                }
+            })
+            .buffer_unordered(urls.len())
+            .for_each(|result| {
+                let urls_clone = Arc::clone(&urls_clone);
+                let results = Arc::clone(&results);
+                async move {
+                    match result {
+                        Ok((index, text)) => {
+                            let url = &urls_clone[index];
+                            let id = url.splitn(4, "/").nth(3).expect("Invalid URL format");
+                            let result = self.single_page(text, id, url.to_string());
+                            results.lock().unwrap().push(result);
+                        }
+                        Err(err) => {
+                            eprintln!("Error processing URL: {}", err);
+                        }
+                    }
+                }
+            })
+            .await;
+
+        let results = Arc::try_unwrap(results).unwrap().into_inner().unwrap();
 
         Ok(results)
     }
@@ -567,7 +638,7 @@ impl FlixHQ {
     /// # Parameters
     /// * `None`
     pub async fn trending_shows(&self) -> anyhow::Result<Vec<FlixHQResult>> {
-        let trending_html = reqwest::Client::new()
+        let trending_html = CLIENT
             .get(format!("{}/home", BASE_URL))
             .send()
             .await?
@@ -576,20 +647,46 @@ impl FlixHQ {
 
         let ids = self.parse_trending_shows(trending_html);
 
-        let mut results = vec![];
+        let mut urls = vec![];
 
         for id in ids.iter().flatten() {
-            let media_html = reqwest::Client::new()
-                .get(format!("{}/{}", BASE_URL, id))
-                .send()
-                .await?
-                .text()
-                .await?;
-
-            let result = self.single_page(media_html, id, format!("{}/{}", BASE_URL, id));
-
-            results.push(result);
+            let url = format!("{}/{}", BASE_URL, id);
+            urls.push(url);
         }
+
+        let urls_clone = Arc::new(urls.clone());
+
+        let results: Arc<Mutex<Vec<FlixHQResult>>> = Arc::new(Mutex::new(Vec::new()));
+
+        stream::iter(urls.iter().enumerate())
+            .map(|(index, url)| {
+                let client = &CLIENT;
+                async move {
+                    let resp = client.get(url).send().await?;
+                    resp.text().await.map(|text| (index, text))
+                }
+            })
+            .buffer_unordered(urls.len())
+            .for_each(|result| {
+                let urls_clone = Arc::clone(&urls_clone);
+                let results = Arc::clone(&results);
+                async move {
+                    match result {
+                        Ok((index, text)) => {
+                            let url = &urls_clone[index];
+                            let id = url.splitn(4, "/").nth(3).expect("Invalid URL format");
+                            let result = self.single_page(text, id, url.to_string());
+                            results.lock().unwrap().push(result);
+                        }
+                        Err(err) => {
+                            eprintln!("Error processing URL: {}", err);
+                        }
+                    }
+                }
+            })
+            .await;
+
+        let results = Arc::try_unwrap(results).unwrap().into_inner().unwrap();
 
         Ok(results)
     }
