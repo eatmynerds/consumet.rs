@@ -1,7 +1,7 @@
 use crate::{
-    CLIENT,
     models::{ExtractConfig, VideoExtractor},
     utils::{decrypt, util_funcs::USER_AGENT},
+    CLIENT,
 };
 use openssl::base64;
 use serde::{Deserialize, Serialize};
