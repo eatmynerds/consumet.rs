@@ -4,12 +4,6 @@
 
 consumet.rs is a crates.io library which provides high-level APIs to get information about several entertainment mediums like books, movies, comics, anime, manga, etc.
 
-Checkout the original [`consumet.ts`](https://github.com/consumet/consumet.ts/)
-
-Credits to the beautiful people who wrote the original api consumet
-
-[![](https://contrib.rocks/image?repo=consumet/consumet.ts)](https://github.com/consumet/consumet.ts/graphs/contributors)
-
 <p align="center">
     <a href="https://github.com/rust-lang/rust-clippy/actions?query=workflow%3A%22Clippy+Test+(bors)%22+event%3Apush+branch%3Aauto">
         <img src="https://github.com/rust-lang/rust-clippy/workflows/Clippy%20Test%20(bors)/badge.svg?branch=auto&event=push" alt="Clippy Test">
@@ -81,6 +75,12 @@ You can contact the maintainer of consumet.rs via [email](mailto:vipershniper08@
 <a href="https://discord.gg/qTPfvMxzNH">
    <img src="https://discordapp.com/api/guilds/987492554486452315/widget.png?style=banner2">
 </a>
+
+Checkout the original [`consumet.ts`](https://github.com/consumet/consumet.ts/)
+
+Credits to the beautiful people who wrote the original consumet.ts
+
+[![](https://contrib.rocks/image?repo=consumet/consumet.ts)](https://github.com/consumet/consumet.ts/graphs/contributors)
 
 ## License
 Licensed under [GPL-3.0](./LICENSE).
