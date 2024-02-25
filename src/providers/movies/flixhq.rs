@@ -143,7 +143,7 @@ pub struct FlixHQServerInfo {
 pub const BASE_URL: &'static str = "https://flixhq.to";
 
 impl FlixHQ {
-    /// Returns a future which resolves into FlixHQSearchResults. (*[`impl Future<Output = Result<FlixHQSearchResults>>`](https://github.com/eatmynerds/consumet.rs/blob/master/src/providers/movies/flixhq.rs#L57-L65)*)\
+    /// Returns a future which resolves into FlixHQSearchResults. (*[`impl Future<Output = Result<FlixHQSearchResults>>`](https://github.com/eatmynerds/consumet.rs/blob/master/src/providers/movies/flixhq.rs#L60-L68)*)\
     /// # Parameters
     /// `query` - query to search for. (*In this case, We're searching for `Vincenzo`*) P.S: `vincenzo` is a really good korean drama i highly recommend it. |
     /// `page (optional)` - page number (default: 1)                                                                                                                   |
@@ -218,7 +218,7 @@ impl FlixHQ {
         })
     }
 
-    /// Returns a future which resolves into an enum containing extra media info (including the episodes). (*[`impl Future<Output = Result<FlixHQInfo>>`](https://github.com/eatmynerds/consumet.rs/blob/master/src/providers/movies/flixhq.rs#L87-L91)*)\
+    /// Returns a future which resolves into an enum containing extra media info (including the episodes). (*[`impl Future<Output = Result<FlixHQInfo>>`](https://github.com/eatmynerds/consumet.rs/blob/master/src/providers/movies/flixhq.rs#L90-L94)*)\
     /// # Parameters
     /// * `media_id` - takes media id or url as a parameter. (*media id or url can be found in the media search results as shown on the above method*)
     pub async fn info(&self, media_id: &str) -> anyhow::Result<FlixHQInfo> {
@@ -306,7 +306,7 @@ impl FlixHQ {
         }
     }
 
-    /// Returns a future which resolves into FlixHQServers (*[`impl Future<Output = Result<FlixHQServers>>`](https://github.com/eatmynerds/consumet.rs/blob/master/src/providers/movies/flixhq.rs#L33-L36)*)\
+    /// Returns a future which resolves into FlixHQServers (*[`impl Future<Output = Result<FlixHQServers>>`](https://github.com/eatmynerds/consumet.rs/blob/master/src/providers/movies/flixhq.rs#L36-L39)*)\
     /// # Parameters
     /// * `episode_id` - take an episode id or url as a parameter. (*episode id or episode url can be found in the media info object*)
     /// * `media_id` - takes media id as a parameter. (*media id can be found in the media info object*
@@ -329,7 +329,7 @@ impl FlixHQ {
         Ok(FlixHQServers { servers })
     }
 
-    /// Returns a future which resolves into FlixHQSources. (*[`impl Future<Output = Result<FlixHQSources>>`](https://github.com/eatmynerds/consumet.rs/blob/master/src/providers/movies/flixhq.rs#L26-L31)*)\
+    /// Returns a future which resolves into FlixHQSources. (*[`impl Future<Output = Result<FlixHQSources>>`](https://github.com/eatmynerds/consumet.rs/blob/master/src/providers/movies/flixhq.rs#L29-L34*)\
     /// # Parameters
     /// * `episode_id` - takes episode id as a parameter. (*episode id can be found in the media info object*)
     /// * `media_id` - takes media id as a parameter. (*media id can be found in the media info object*)
@@ -460,7 +460,7 @@ impl FlixHQ {
         }
     }
 
-    /// Returns a future which resolves into an vector of movies. (*[`impl Future<Output = Result<Vec<FlixHQResult>>>`](https://github.com/eatmynerds/consumet.rs/blob/master/src/providers/movies/flixhq.rs#L67-L85)*)\
+    /// Returns a future which resolves into an vector of movies. (*[`impl Future<Output = Result<Vec<FlixHQResult>>>`](https://github.com/eatmynerds/consumet.rs/blob/master/src/providers/movies/flixhq.rs#L70-L88)*)\
     /// # Parameters
     /// * `None`
     pub async fn recent_movies(&self) -> anyhow::Result<Vec<FlixHQResult>> {
@@ -518,7 +518,7 @@ impl FlixHQ {
         Ok(results)
     }
 
-    /// Returns a future which resolves into an vector of tv shows. (*[`impl Future<Output = Result<Vec<FlixHQResult>>>`](https://github.com/eatmynerds/consumet.rs/blob/master/src/providers/movies/flixhq.rs#L67-L85)*)\
+    /// Returns a future which resolves into an vector of tv shows. (*[`impl Future<Output = Result<Vec<FlixHQResult>>>`](https://github.com/eatmynerds/consumet.rs/blob/master/src/providers/movies/flixhq.rs#L70-L88)*)\
     /// # Parameters
     /// * `None`
     pub async fn recent_shows(&self) -> anyhow::Result<Vec<FlixHQResult>> {
@@ -576,7 +576,7 @@ impl FlixHQ {
         Ok(results)
     }
 
-    /// Returns a future which resolves into an vector of movies. (*[`impl Future<Output = Result<Vec<FlixHQResult>>>`](https://github.com/eatmynerds/consumet.rs/blob/master/src/providers/movies/flixhq.rs#L67-L85)*)\
+    /// Returns a future which resolves into an vector of movies. (*[`impl Future<Output = Result<Vec<FlixHQResult>>>`](https://github.com/eatmynerds/consumet.rs/blob/master/src/providers/movies/flixhq.rs#L70-L88)*)\
     /// # Parameters
     /// * `None`
     pub async fn trending_movies(&self) -> anyhow::Result<Vec<FlixHQResult>> {
@@ -634,7 +634,7 @@ impl FlixHQ {
         Ok(results)
     }
 
-    /// Returns a future which resolves into an vector of tv shows. (*[`impl Future<Output = Result<Vec<FlixHQResult>>>`](https://github.com/eatmynerds/consumet.rs/blob/master/src/providers/movies/flixhq.rs#L67-L85)*)\
+    /// Returns a future which resolves into an vector of tv shows. (*[`impl Future<Output = Result<Vec<FlixHQResult>>>`](https://github.com/eatmynerds/consumet.rs/blob/master/src/providers/movies/flixhq.rs#L70-L88)*)\
     /// # Parameters
     /// * `None`
     pub async fn trending_shows(&self) -> anyhow::Result<Vec<FlixHQResult>> {
