@@ -178,11 +178,8 @@ impl FlixHQ {
             urls.push(url);
         }
 
-        let urls_clone = Arc::new(urls.clone());
-
-        let results: Arc<Mutex<Vec<FlixHQResult>>> = Arc::new(Mutex::new(Vec::new()));
-
-        stream::iter(urls.iter().enumerate())
+        let bodies = stream::iter(urls.clone())
+            .enumerate()
             .map(|(index, url)| {
                 let client = &CLIENT;
                 async move {
@@ -190,20 +187,24 @@ impl FlixHQ {
                     resp.text().await.map(|text| (index, text))
                 }
             })
-            .buffer_unordered(urls.len())
+            .buffer_unordered(urls.len());
+
+        let results: Arc<Mutex<Vec<FlixHQResult>>> = Arc::new(Mutex::new(Vec::new()));
+
+        bodies
             .for_each(|result| {
-                let urls_clone = Arc::clone(&urls_clone);
+                let urls = urls.clone(); // Clone urls again for each closure
                 let results = Arc::clone(&results);
                 async move {
                     match result {
                         Ok((index, text)) => {
-                            let url = &urls_clone[index];
-                            let id = url.splitn(4, "/").nth(3).expect("Invalid URL format");
-                            let result = self.single_page(text, id, url.to_string());
+                            let url = &urls[index];
+                            let id = url.splitn(4, "/").collect::<Vec<&str>>()[3];
+                            let result = self.single_page(text, id, url.to_string()); // Assuming single_page function is defined somewhere
                             results.lock().unwrap().push(result);
                         }
                         Err(err) => {
-                            eprintln!("Error processing URL: {}", err);
+                            eprintln!("Error processing url: {}", err);
                         }
                     }
                 }
@@ -483,11 +484,8 @@ impl FlixHQ {
             urls.push(url);
         }
 
-        let urls_clone = Arc::new(urls.clone());
-
-        let results: Arc<Mutex<Vec<FlixHQResult>>> = Arc::new(Mutex::new(Vec::new()));
-
-        stream::iter(urls.iter().enumerate())
+        let bodies = stream::iter(urls.clone())
+            .enumerate()
             .map(|(index, url)| {
                 let client = &CLIENT;
                 async move {
@@ -495,20 +493,24 @@ impl FlixHQ {
                     resp.text().await.map(|text| (index, text))
                 }
             })
-            .buffer_unordered(urls.len())
+            .buffer_unordered(urls.len());
+
+        let results: Arc<Mutex<Vec<FlixHQResult>>> = Arc::new(Mutex::new(Vec::new()));
+
+        bodies
             .for_each(|result| {
-                let urls_clone = Arc::clone(&urls_clone);
+                let urls = urls.clone(); // Clone urls again for each closure
                 let results = Arc::clone(&results);
                 async move {
                     match result {
                         Ok((index, text)) => {
-                            let url = &urls_clone[index];
-                            let id = url.splitn(4, "/").nth(3).expect("Invalid URL format");
-                            let result = self.single_page(text, id, url.to_string());
+                            let url = &urls[index];
+                            let id = url.splitn(4, "/").collect::<Vec<&str>>()[3];
+                            let result = self.single_page(text, id, url.to_string()); // Assuming single_page function is defined somewhere
                             results.lock().unwrap().push(result);
                         }
                         Err(err) => {
-                            eprintln!("Error processing URL: {}", err);
+                            eprintln!("Error processing url: {}", err);
                         }
                     }
                 }
@@ -540,11 +542,8 @@ impl FlixHQ {
             urls.push(url);
         }
 
-        let urls_clone = Arc::new(urls.clone());
-
-        let results: Arc<Mutex<Vec<FlixHQResult>>> = Arc::new(Mutex::new(Vec::new()));
-
-        stream::iter(urls.iter().enumerate())
+        let bodies = stream::iter(urls.clone())
+            .enumerate()
             .map(|(index, url)| {
                 let client = &CLIENT;
                 async move {
@@ -552,20 +551,24 @@ impl FlixHQ {
                     resp.text().await.map(|text| (index, text))
                 }
             })
-            .buffer_unordered(urls.len())
+            .buffer_unordered(urls.len());
+
+        let results: Arc<Mutex<Vec<FlixHQResult>>> = Arc::new(Mutex::new(Vec::new()));
+
+        bodies
             .for_each(|result| {
-                let urls_clone = Arc::clone(&urls_clone);
+                let urls = urls.clone(); // Clone urls again for each closure
                 let results = Arc::clone(&results);
                 async move {
                     match result {
                         Ok((index, text)) => {
-                            let url = &urls_clone[index];
-                            let id = url.splitn(4, "/").nth(3).expect("Invalid URL format");
-                            let result = self.single_page(text, id, url.to_string());
+                            let url = &urls[index];
+                            let id = url.splitn(4, "/").collect::<Vec<&str>>()[3];
+                            let result = self.single_page(text, id, url.to_string()); // Assuming single_page function is defined somewhere
                             results.lock().unwrap().push(result);
                         }
                         Err(err) => {
-                            eprintln!("Error processing URL: {}", err);
+                            eprintln!("Error processing url: {}", err);
                         }
                     }
                 }
@@ -597,11 +600,8 @@ impl FlixHQ {
             urls.push(url);
         }
 
-        let urls_clone = Arc::new(urls.clone());
-
-        let results: Arc<Mutex<Vec<FlixHQResult>>> = Arc::new(Mutex::new(Vec::new()));
-
-        stream::iter(urls.iter().enumerate())
+        let bodies = stream::iter(urls.clone())
+            .enumerate()
             .map(|(index, url)| {
                 let client = &CLIENT;
                 async move {
@@ -609,20 +609,24 @@ impl FlixHQ {
                     resp.text().await.map(|text| (index, text))
                 }
             })
-            .buffer_unordered(urls.len())
+            .buffer_unordered(urls.len());
+
+        let results: Arc<Mutex<Vec<FlixHQResult>>> = Arc::new(Mutex::new(Vec::new()));
+
+        bodies
             .for_each(|result| {
-                let urls_clone = Arc::clone(&urls_clone);
+                let urls = urls.clone(); // Clone urls again for each closure
                 let results = Arc::clone(&results);
                 async move {
                     match result {
                         Ok((index, text)) => {
-                            let url = &urls_clone[index];
-                            let id = url.splitn(4, "/").nth(3).expect("Invalid URL format");
-                            let result = self.single_page(text, id, url.to_string());
+                            let url = &urls[index];
+                            let id = url.splitn(4, "/").collect::<Vec<&str>>()[3];
+                            let result = self.single_page(text, id, url.to_string()); // Assuming single_page function is defined somewhere
                             results.lock().unwrap().push(result);
                         }
                         Err(err) => {
-                            eprintln!("Error processing URL: {}", err);
+                            eprintln!("Error processing url: {}", err);
                         }
                     }
                 }
@@ -654,11 +658,8 @@ impl FlixHQ {
             urls.push(url);
         }
 
-        let urls_clone = Arc::new(urls.clone());
-
-        let results: Arc<Mutex<Vec<FlixHQResult>>> = Arc::new(Mutex::new(Vec::new()));
-
-        stream::iter(urls.iter().enumerate())
+        let bodies = stream::iter(urls.clone())
+            .enumerate()
             .map(|(index, url)| {
                 let client = &CLIENT;
                 async move {
@@ -666,20 +667,24 @@ impl FlixHQ {
                     resp.text().await.map(|text| (index, text))
                 }
             })
-            .buffer_unordered(urls.len())
+            .buffer_unordered(urls.len());
+
+        let results: Arc<Mutex<Vec<FlixHQResult>>> = Arc::new(Mutex::new(Vec::new()));
+
+        bodies
             .for_each(|result| {
-                let urls_clone = Arc::clone(&urls_clone);
+                let urls = urls.clone(); // Clone urls again for each closure
                 let results = Arc::clone(&results);
                 async move {
                     match result {
                         Ok((index, text)) => {
-                            let url = &urls_clone[index];
-                            let id = url.splitn(4, "/").nth(3).expect("Invalid URL format");
-                            let result = self.single_page(text, id, url.to_string());
+                            let url = &urls[index];
+                            let id = url.splitn(4, "/").collect::<Vec<&str>>()[3];
+                            let result = self.single_page(text, id, url.to_string()); // Assuming single_page function is defined somewhere
                             results.lock().unwrap().push(result);
                         }
                         Err(err) => {
-                            eprintln!("Error processing URL: {}", err);
+                            eprintln!("Error processing url: {}", err);
                         }
                     }
                 }
