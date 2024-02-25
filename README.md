@@ -76,6 +76,7 @@ You can contact the maintainer of consumet.rs via [email](mailto:vipershniper08@
    <img src="https://discordapp.com/api/guilds/987492554486452315/widget.png?style=banner2">
 </a>
 
+### Contributors
 Checkout the original [`consumet.ts`](https://github.com/consumet/consumet.ts/)
 
 Credits to the beautiful people who wrote the original consumet.ts
