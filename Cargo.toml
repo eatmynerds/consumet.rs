@@ -1,6 +1,6 @@
 [package]
 name = "consumet"
-version = "0.0.6"
+version = "0.0.7"
 edition = "2021"
 description = "Consumet API RIIR"
 license-file = "LICENSE"
@@ -13,6 +13,8 @@ authors = ["eatmynerds <vipershniper08@gmail.com>"]
 [dependencies]
 anyhow = "1.0"
 chrono = "0.4.26"
+futures = "0.3.30"
+lazy_static = "1.4.0"
 openssl = "0.10.55"
 reqwest = { version = "0.11.18", features = ["json"] }
 serde = { version = "1.0.171", features = ["derive"] }

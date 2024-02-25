@@ -6,7 +6,11 @@ use crate::{
     models::{ExtractConfig, StreamingServers, TvType, VideoExtractor},
 };
 
+use futures::{stream, StreamExt};
+use lazy_static::lazy_static;
+use reqwest::Client;
 use serde::{Deserialize, Serialize};
+use std::sync::{Arc, Mutex};
 
 /// Contains all the FlixHQ Info
 pub struct FlixHQ;
@@ -64,7 +68,7 @@ pub struct FlixHQSearchResults {
     pub results: Vec<FlixHQResult>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct FlixHQResult {
     pub id: String,
     pub cover: String,
@@ -139,6 +143,10 @@ pub struct FlixHQServerInfo {
 
 pub const BASE_URL: &'static str = "https://flixhq.to";
 
+lazy_static! {
+    static ref CLIENT: Client = Client::new();
+}
+
 impl FlixHQ {
     /// Returns a future which resolves into FlixHQSearchResults. (*[`impl Future<Output = Result<FlixHQSearchResults>>`](https://github.com/eatmynerds/consumet.rs/blob/master/src/providers/movies/flixhq.rs#L57-L65)*)\
     /// # Parameters
@@ -152,7 +160,7 @@ impl FlixHQ {
         let current_page = page.unwrap_or(1);
 
         let parsed_query = query.replace(' ', "-");
-        let page_html = reqwest::Client::new()
+        let page_html = CLIENT
             .get(format!(
                 "{}/search/{}?page={}",
                 BASE_URL, parsed_query, current_page
@@ -164,21 +172,47 @@ impl FlixHQ {
 
         let (ids, has_next_page, total_pages) = self.parse_search(page_html);
 
-        let mut results = vec![];
+        let mut urls = vec![];
 
         for id in ids.iter().flatten() {
             let url = format!("{}/{}", BASE_URL, id);
-            let media_html = reqwest::Client::new()
-                .get(&url)
-                .send()
-                .await?
-                .text()
-                .await?;
-
-            let result = self.single_page(media_html, id, url);
-
-            results.push(result);
+            urls.push(url);
         }
+
+        let bodies = stream::iter(urls.clone())
+            .enumerate()
+            .map(|(index, url)| {
+                let client = &CLIENT;
+                async move {
+                    let resp = client.get(url).send().await?;
+                    resp.text().await.map(|text| (index, text))
+                }
+            })
+            .buffer_unordered(urls.len());
+
+        let results: Arc<Mutex<Vec<FlixHQResult>>> = Arc::new(Mutex::new(Vec::new()));
+
+        bodies
+            .for_each(|result| {
+                let urls = urls.clone(); // Clone urls again for each closure
+                let results = Arc::clone(&results);
+                async move {
+                    match result {
+                        Ok((index, text)) => {
+                            let url = &urls[index];
+                            let id = url.splitn(4, "/").collect::<Vec<&str>>()[3];
+                            let result = self.single_page(text, id, url.to_string()); // Assuming single_page function is defined somewhere
+                            results.lock().unwrap().push(result);
+                        }
+                        Err(err) => {
+                            eprintln!("Error processing url: {}", err);
+                        }
+                    }
+                }
+            })
+            .await;
+
+        let results = Arc::try_unwrap(results).unwrap().into_inner().unwrap();
 
         Ok(FlixHQSearchResults {
             current_page,
