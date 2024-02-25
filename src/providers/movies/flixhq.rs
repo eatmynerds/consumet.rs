@@ -4,11 +4,10 @@ use crate::{
     },
     html::movies::flixhq_html::FlixHQHTML,
     models::{ExtractConfig, StreamingServers, TvType, VideoExtractor},
+    CLIENT,
 };
 
 use futures::{stream, StreamExt};
-use lazy_static::lazy_static;
-use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 
@@ -142,9 +141,6 @@ pub struct FlixHQServerInfo {
 }
 
 pub const BASE_URL: &'static str = "https://flixhq.to";
-lazy_static! {
-    static ref CLIENT: Client = Client::new();
-}
 
 impl FlixHQ {
     /// Returns a future which resolves into FlixHQSearchResults. (*[`impl Future<Output = Result<FlixHQSearchResults>>`](https://github.com/eatmynerds/consumet.rs/blob/master/src/providers/movies/flixhq.rs#L57-L65)*)\

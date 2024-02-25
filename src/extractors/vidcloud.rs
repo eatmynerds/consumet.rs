@@ -1,4 +1,5 @@
 use crate::{
+    CLIENT,
     models::{ExtractConfig, VideoExtractor},
     utils::{decrypt, util_funcs::USER_AGENT},
 };
@@ -83,7 +84,7 @@ impl VideoExtractor for VidCloud {
         let parts: Vec<&str> = video_url.split('/').collect();
         let id = parts.last().unwrap().split('?').next().unwrap();
 
-        let sources_text = reqwest::Client::new()
+        let sources_text = CLIENT
             .get(format!("{}/ajax/embed-4/getSources?id={}", host, id))
             .header("X-Requested-With", "XMLHttpRequest")
             .header("Referer", video_url.to_string())
@@ -113,7 +114,7 @@ impl VideoExtractor for VidCloud {
         let sources = match url {
             File::DecryptedURL(decrypted) => decrypted,
             File::EncryptedURL(encrypted) => {
-                let decrypt_key: String = reqwest::Client::new()
+                let decrypt_key: String = CLIENT
                     .get("https://raw.githubusercontent.com/eatmynerds/key/e4/key.txt")
                     .send()
                     .await?
@@ -143,7 +144,7 @@ impl VideoExtractor for VidCloud {
         });
 
         for source in sources {
-            let data = reqwest::Client::new()
+            let data = CLIENT
                 .get(&source.file.unwrap())
                 .send()
                 .await?
