@@ -185,7 +185,7 @@ impl FlixHQ {
             })
             .buffer_unordered(urls.len());
 
-        let results: Arc<Mutex<Vec<FlixHQResult>>> = Arc::new(Mutex::new(Vec::new()));
+        let results: Arc<Mutex<Vec<FlixHQResult>>> = Arc::new(Mutex::new(vec![]));
 
         bodies
             .for_each(|result| {

@@ -55,8 +55,11 @@ impl FlixHQHTML for FlixHQ {
 
         let page_parser = Page { elements: fragment };
 
-        let ids = page_parser.page_ids();
-        (ids, page_parser.has_next_page(), page_parser.total_pages())
+        (
+            page_parser.page_ids(),
+            page_parser.has_next_page(),
+            page_parser.total_pages(),
+        )
     }
 
     fn single_page(&self, media_html: String, id: &str, url: String) -> FlixHQResult {
