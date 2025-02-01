@@ -391,7 +391,7 @@ impl FlixHQ {
 
                 mix_drop
                     .extract(
-                        server_info.link.clone(),
+                        &server_info.link,
                         ExtractConfig {
                             ..Default::default()
                         },
@@ -404,7 +404,7 @@ impl FlixHQ {
                     headers: server_info.link,
                 })
             }
-            StreamingServers::VidCloud => {
+            StreamingServers::VidCloud | StreamingServers::UpCloud | _ => {
                 let mut vid_cloud = VidCloud {
                     sources: vec![],
                     subtitles: vec![],
@@ -412,52 +412,8 @@ impl FlixHQ {
 
                 vid_cloud
                     .extract(
-                        server_info.link.clone(),
+                        &server_info.link,
                         ExtractConfig {
-                            is_alternative: Some(true),
-                            ..Default::default()
-                        },
-                    )
-                    .await?;
-
-                Ok(FlixHQSources {
-                    sources: FlixHQSourceType::VidCloud(vid_cloud.sources),
-                    subtitles: FlixHQSubtitles::VidCloud(vid_cloud.subtitles),
-                    headers: server_info.link,
-                })
-            }
-            StreamingServers::UpCloud => {
-                let mut vid_cloud = VidCloud {
-                    sources: vec![],
-                    subtitles: vec![],
-                };
-
-                vid_cloud
-                    .extract(
-                        server_info.link.clone(),
-                        ExtractConfig {
-                            ..Default::default()
-                        },
-                    )
-                    .await?;
-
-                Ok(FlixHQSources {
-                    sources: FlixHQSourceType::VidCloud(vid_cloud.sources),
-                    subtitles: FlixHQSubtitles::VidCloud(vid_cloud.subtitles),
-                    headers: server_info.link,
-                })
-            }
-            _ => {
-                let mut vid_cloud = VidCloud {
-                    sources: vec![],
-                    subtitles: vec![],
-                };
-
-                vid_cloud
-                    .extract(
-                        server_info.link.clone(),
-                        ExtractConfig {
-                            is_alternative: Some(false),
                             ..Default::default()
                         },
                     )

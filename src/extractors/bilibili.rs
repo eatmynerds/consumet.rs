@@ -13,7 +13,7 @@ impl VideoExtractor for Bilibili {
     // NOTE: Only needs episode_id param
     async fn extract(
         &mut self,
-        _episode_id: String,
+        _episode_id: &str,
         args: ExtractConfig,
     ) -> anyhow::Result<Self::VideoSource> {
         let ExtractConfig {

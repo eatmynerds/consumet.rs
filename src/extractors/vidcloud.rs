@@ -53,7 +53,7 @@ impl VideoExtractor for VidCloud {
     // NOTE: Only needs video_url & is_alternativeparam
     async fn extract(
         &mut self,
-        video_url: String,
+        video_url: &str,
         args: ExtractConfig,
     ) -> anyhow::Result<Self::VideoSource> {
         let ExtractConfig {

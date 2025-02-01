@@ -14,7 +14,7 @@ impl VideoExtractor for VizCloud {
     // NOTE: Only needs video_url & viz_cloud_helper & api_key param
     async fn extract(
         &mut self,
-        _video_url: String,
+        _video_url: &str,
         _args: ExtractConfig,
     ) -> anyhow::Result<Self::VideoSource> {
         self.sources.push(IVideo {

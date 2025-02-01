@@ -12,7 +12,7 @@ impl VideoExtractor for VidMoly {
     // NOTE: Only needs video_url param
     async fn extract(
         &mut self,
-        _video_url: String,
+        _video_url: &str,
         _args: ExtractConfig,
     ) -> anyhow::Result<Self::VideoSource> {
         self.sources.push(IVideo {

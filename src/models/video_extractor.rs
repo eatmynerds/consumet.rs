@@ -7,7 +7,7 @@ pub trait VideoExtractor {
     /// returns video sources (video links) available
     fn extract(
         &mut self,
-        video_url: String,
+        video_url: &str,
         args: ExtractConfig,
     ) -> impl std::future::Future<Output = anyhow::Result<Self::VideoSource>>;
 }

@@ -15,7 +15,7 @@ impl VideoExtractor for SmashyStream {
     // NOTE: Only needs video_url param
     async fn extract(
         &mut self,
-        _video_url: String,
+        _video_url: &str,
         args: ExtractConfig,
     ) -> anyhow::Result<Self::VideoSource> {
         let ExtractConfig {
