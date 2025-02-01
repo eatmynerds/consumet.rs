@@ -7,7 +7,7 @@ use crate::{
     CLIENT,
 };
 
-use futures::{stream, StreamExt};
+use futures::{stream::FuturesUnordered, StreamExt};
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 
@@ -165,49 +165,61 @@ impl FlixHQ {
             .text()
             .await?;
 
-        let (ids, has_next_page, total_pages) = self.parse_search(page_html);
+        let (ids, has_next_page, total_pages) = self.parse_search(&page_html);
 
-        let mut urls = vec![];
-
-        for id in ids.iter().flatten() {
-            let url = format!("{}/{}", BASE_URL, id);
-            urls.push(url);
-        }
-
-        let bodies = stream::iter(urls.clone())
+        let urls: Arc<Vec<String>> = Arc::new(
+            ids.iter()
+                .map(|id| format!("{}/{}", BASE_URL, id))
+                .collect(),
+        );
+        let bodies = urls
+            .iter()
             .enumerate()
             .map(|(index, url)| {
                 let client = &CLIENT;
                 async move {
-                    let resp = client.get(url).send().await?;
-                    resp.text().await.map(|text| (index, text))
+                    let resp = client.get(url).send().await;
+                    match resp {
+                        Ok(response) => {
+                            let text = response.text().await;
+                            text.map(|body| (index, body))
+                                .map_err(|e| format!("Failed to fetch body: {}", e))
+                        }
+                        Err(e) => Err(format!("Failed to fetch URL: {}", e)),
+                    }
                 }
             })
-            .buffer_unordered(urls.len());
+            .collect::<FuturesUnordered<_>>();
 
-        let results: Arc<Mutex<Vec<FlixHQResult>>> = Arc::new(Mutex::new(vec![]));
+        let results: Arc<Mutex<Vec<FlixHQResult>>> = Arc::new(Mutex::new(Vec::new()));
 
         bodies
             .for_each(|result| {
-                let urls = urls.clone(); // Clone urls again for each closure
+                let urls = Arc::clone(&urls);
                 let results = Arc::clone(&results);
                 async move {
                     match result {
                         Ok((index, text)) => {
                             let url = &urls[index];
-                            let id = url.splitn(4, "/").collect::<Vec<&str>>()[3];
-                            let result = self.single_page(text, id, url.to_string()); // Assuming single_page function is defined somewhere
-                            results.lock().unwrap().push(result);
+                            let id = url.splitn(4, '/').collect::<Vec<&str>>()[3];
+                            let search_result = self.single_page(&text, id, url);
+                            results
+                                .lock()
+                                .expect("Failed to lock mutex")
+                                .push(search_result);
                         }
                         Err(err) => {
-                            eprintln!("Error processing url: {}", err);
+                            eprintln!("Error processing URL: {}", err);
                         }
                     }
                 }
             })
             .await;
 
-        let results = Arc::try_unwrap(results).unwrap().into_inner().unwrap();
+        let results = Arc::try_unwrap(results)
+            .expect("Arc still has multiple owners")
+            .into_inner()
+            .expect("Failed to acquire lock");
 
         Ok(FlixHQSearchResults {
             current_page,
@@ -230,7 +242,7 @@ impl FlixHQ {
             .await?;
 
         let search_result =
-            self.single_page(info_html, media_id, format!("{}/{}", BASE_URL, media_id));
+            self.single_page(&info_html, media_id, &format!("{}/{}", BASE_URL, media_id));
 
         let media_type = search_result.media_type;
         let is_seasons = matches!(media_type, TvType::TvSeries);
@@ -245,11 +257,11 @@ impl FlixHQ {
                 .text()
                 .await?;
 
-            let season_ids = self.info_season(season_html);
+            let season_ids = self.info_season(&season_html);
 
-            let mut seasons_and_episodes = vec![];
+            let mut seasons_and_episodes: Vec<Vec<FlixHQEpisode>> = vec![];
 
-            for (i, episode) in season_ids.iter().enumerate() {
+            for episode in season_ids.iter() {
                 let episode_html = CLIENT
                     .get(format!("{}/ajax/v2/season/episodes/{}", BASE_URL, &episode))
                     .send()
@@ -257,7 +269,7 @@ impl FlixHQ {
                     .text()
                     .await?;
 
-                let episodes = self.info_episode(episode_html, i);
+                let episodes = self.info_episode(&episode_html);
                 seasons_and_episodes.push(episodes.episodes);
             }
 
@@ -265,7 +277,7 @@ impl FlixHQ {
                 total_episodes: seasons_and_episodes.last().map(|x| x.len()).unwrap(),
                 seasons: FlixHQSeason {
                     total_seasons: seasons_and_episodes.len(),
-                    episodes: seasons_and_episodes.clone(),
+                    episodes: seasons_and_episodes
                 },
                 id: search_result.id,
                 cover: search_result.cover,
@@ -324,7 +336,7 @@ impl FlixHQ {
 
         let server_html = CLIENT.get(episode_id).send().await?.text().await?;
 
-        let servers = self.info_server(server_html, media_id);
+        let servers = self.info_server(&server_html, media_id);
 
         Ok(FlixHQServers { servers })
     }
@@ -471,49 +483,63 @@ impl FlixHQ {
             .text()
             .await?;
 
-        let ids = self.parse_recent_movies(recent_html);
+        let ids = self.parse_recent_movies(&recent_html);
 
-        let mut urls = vec![];
-
-        for id in ids.iter().flatten() {
-            let url = format!("{}/{}", BASE_URL, id);
-            urls.push(url);
-        }
-
-        let bodies = stream::iter(urls.clone())
+    
+        let urls: Arc<Vec<String>> = Arc::new(
+            ids.iter()
+                .flatten()
+                .map(|id| format!("{}/{}", BASE_URL, id))
+                .collect(),
+        );
+        let bodies = urls
+            .iter()
             .enumerate()
             .map(|(index, url)| {
                 let client = &CLIENT;
                 async move {
-                    let resp = client.get(url).send().await?;
-                    resp.text().await.map(|text| (index, text))
+                    let resp = client.get(url).send().await;
+                    match resp {
+                        Ok(response) => {
+                            let text = response.text().await;
+                            text.map(|body| (index, body))
+                                .map_err(|e| format!("Failed to fetch body: {}", e))
+                        }
+                        Err(e) => Err(format!("Failed to fetch URL: {}", e)),
+                    }
                 }
             })
-            .buffer_unordered(urls.len());
+            .collect::<FuturesUnordered<_>>();
 
         let results: Arc<Mutex<Vec<FlixHQResult>>> = Arc::new(Mutex::new(Vec::new()));
 
         bodies
             .for_each(|result| {
-                let urls = urls.clone(); // Clone urls again for each closure
+                let urls = Arc::clone(&urls);
                 let results = Arc::clone(&results);
                 async move {
                     match result {
                         Ok((index, text)) => {
                             let url = &urls[index];
-                            let id = url.splitn(4, "/").collect::<Vec<&str>>()[3];
-                            let result = self.single_page(text, id, url.to_string()); // Assuming single_page function is defined somewhere
-                            results.lock().unwrap().push(result);
+                            let id = url.splitn(4, '/').collect::<Vec<&str>>()[3];
+                            let search_result = self.single_page(&text, id, url);
+                            results
+                                .lock()
+                                .expect("Failed to lock mutex")
+                                .push(search_result);
                         }
                         Err(err) => {
-                            eprintln!("Error processing url: {}", err);
+                            eprintln!("Error processing URL: {}", err);
                         }
                     }
                 }
             })
             .await;
 
-        let results = Arc::try_unwrap(results).unwrap().into_inner().unwrap();
+        let results = Arc::try_unwrap(results)
+            .expect("Arc still has multiple owners")
+            .into_inner()
+            .expect("Failed to acquire lock");   
 
         Ok(results)
     }
@@ -529,49 +555,62 @@ impl FlixHQ {
             .text()
             .await?;
 
-        let ids = self.parse_recent_shows(recent_html);
+        let ids = self.parse_recent_shows(&recent_html);
 
-        let mut urls = vec![];
-
-        for id in ids.iter().flatten() {
-            let url = format!("{}/{}", BASE_URL, id);
-            urls.push(url);
-        }
-
-        let bodies = stream::iter(urls.clone())
+        let urls: Arc<Vec<String>> = Arc::new(
+            ids.iter()
+                .flatten()
+                .map(|id| format!("{}/{}", BASE_URL, id))
+                .collect(),
+        );
+        let bodies = urls
+            .iter()
             .enumerate()
             .map(|(index, url)| {
                 let client = &CLIENT;
                 async move {
-                    let resp = client.get(url).send().await?;
-                    resp.text().await.map(|text| (index, text))
+                    let resp = client.get(url).send().await;
+                    match resp {
+                        Ok(response) => {
+                            let text = response.text().await;
+                            text.map(|body| (index, body))
+                                .map_err(|e| format!("Failed to fetch body: {}", e))
+                        }
+                        Err(e) => Err(format!("Failed to fetch URL: {}", e)),
+                    }
                 }
             })
-            .buffer_unordered(urls.len());
+            .collect::<FuturesUnordered<_>>();
 
         let results: Arc<Mutex<Vec<FlixHQResult>>> = Arc::new(Mutex::new(Vec::new()));
 
         bodies
             .for_each(|result| {
-                let urls = urls.clone(); // Clone urls again for each closure
+                let urls = Arc::clone(&urls);
                 let results = Arc::clone(&results);
                 async move {
                     match result {
                         Ok((index, text)) => {
                             let url = &urls[index];
-                            let id = url.splitn(4, "/").collect::<Vec<&str>>()[3];
-                            let result = self.single_page(text, id, url.to_string()); // Assuming single_page function is defined somewhere
-                            results.lock().unwrap().push(result);
+                            let id = url.splitn(4, '/').collect::<Vec<&str>>()[3];
+                            let search_result = self.single_page(&text, id, url);
+                            results
+                                .lock()
+                                .expect("Failed to lock mutex")
+                                .push(search_result);
                         }
                         Err(err) => {
-                            eprintln!("Error processing url: {}", err);
+                            eprintln!("Error processing URL: {}", err);
                         }
                     }
                 }
             })
             .await;
 
-        let results = Arc::try_unwrap(results).unwrap().into_inner().unwrap();
+        let results = Arc::try_unwrap(results)
+            .expect("Arc still has multiple owners")
+            .into_inner()
+            .expect("Failed to acquire lock");
 
         Ok(results)
     }
@@ -587,49 +626,62 @@ impl FlixHQ {
             .text()
             .await?;
 
-        let ids = self.parse_trending_movies(trending_html);
+        let ids = self.parse_trending_movies(&trending_html);
 
-        let mut urls = vec![];
-
-        for id in ids.iter().flatten() {
-            let url = format!("{}/{}", BASE_URL, id);
-            urls.push(url);
-        }
-
-        let bodies = stream::iter(urls.clone())
+        let urls: Arc<Vec<String>> = Arc::new(
+            ids.iter()
+                .flatten()
+                .map(|id| format!("{}/{}", BASE_URL, id))
+                .collect(),
+        );
+        let bodies = urls
+            .iter()
             .enumerate()
             .map(|(index, url)| {
                 let client = &CLIENT;
                 async move {
-                    let resp = client.get(url).send().await?;
-                    resp.text().await.map(|text| (index, text))
+                    let resp = client.get(url).send().await;
+                    match resp {
+                        Ok(response) => {
+                            let text = response.text().await;
+                            text.map(|body| (index, body))
+                                .map_err(|e| format!("Failed to fetch body: {}", e))
+                        }
+                        Err(e) => Err(format!("Failed to fetch URL: {}", e)),
+                    }
                 }
             })
-            .buffer_unordered(urls.len());
+            .collect::<FuturesUnordered<_>>();
 
         let results: Arc<Mutex<Vec<FlixHQResult>>> = Arc::new(Mutex::new(Vec::new()));
 
         bodies
             .for_each(|result| {
-                let urls = urls.clone(); // Clone urls again for each closure
+                let urls = Arc::clone(&urls);
                 let results = Arc::clone(&results);
                 async move {
                     match result {
                         Ok((index, text)) => {
                             let url = &urls[index];
-                            let id = url.splitn(4, "/").collect::<Vec<&str>>()[3];
-                            let result = self.single_page(text, id, url.to_string()); // Assuming single_page function is defined somewhere
-                            results.lock().unwrap().push(result);
+                            let id = url.splitn(4, '/').collect::<Vec<&str>>()[3];
+                            let search_result = self.single_page(&text, id, url);
+                            results
+                                .lock()
+                                .expect("Failed to lock mutex")
+                                .push(search_result);
                         }
                         Err(err) => {
-                            eprintln!("Error processing url: {}", err);
+                            eprintln!("Error processing URL: {}", err);
                         }
                     }
                 }
             })
             .await;
 
-        let results = Arc::try_unwrap(results).unwrap().into_inner().unwrap();
+        let results = Arc::try_unwrap(results)
+            .expect("Arc still has multiple owners")
+            .into_inner()
+            .expect("Failed to acquire lock");
 
         Ok(results)
     }
@@ -645,49 +697,62 @@ impl FlixHQ {
             .text()
             .await?;
 
-        let ids = self.parse_trending_shows(trending_html);
+        let ids = self.parse_trending_shows(&trending_html);
 
-        let mut urls = vec![];
-
-        for id in ids.iter().flatten() {
-            let url = format!("{}/{}", BASE_URL, id);
-            urls.push(url);
-        }
-
-        let bodies = stream::iter(urls.clone())
+                let urls: Arc<Vec<String>> = Arc::new(
+            ids.iter()
+                .flatten()
+                .map(|id| format!("{}/{}", BASE_URL, id))
+                .collect(),
+        );
+        let bodies = urls
+            .iter()
             .enumerate()
             .map(|(index, url)| {
                 let client = &CLIENT;
                 async move {
-                    let resp = client.get(url).send().await?;
-                    resp.text().await.map(|text| (index, text))
+                    let resp = client.get(url).send().await;
+                    match resp {
+                        Ok(response) => {
+                            let text = response.text().await;
+                            text.map(|body| (index, body))
+                                .map_err(|e| format!("Failed to fetch body: {}", e))
+                        }
+                        Err(e) => Err(format!("Failed to fetch URL: {}", e)),
+                    }
                 }
             })
-            .buffer_unordered(urls.len());
+            .collect::<FuturesUnordered<_>>();
 
         let results: Arc<Mutex<Vec<FlixHQResult>>> = Arc::new(Mutex::new(Vec::new()));
 
         bodies
             .for_each(|result| {
-                let urls = urls.clone(); // Clone urls again for each closure
+                let urls = Arc::clone(&urls);
                 let results = Arc::clone(&results);
                 async move {
                     match result {
                         Ok((index, text)) => {
                             let url = &urls[index];
-                            let id = url.splitn(4, "/").collect::<Vec<&str>>()[3];
-                            let result = self.single_page(text, id, url.to_string()); // Assuming single_page function is defined somewhere
-                            results.lock().unwrap().push(result);
+                            let id = url.splitn(4, '/').collect::<Vec<&str>>()[3];
+                            let search_result = self.single_page(&text, id, url);
+                            results
+                                .lock()
+                                .expect("Failed to lock mutex")
+                                .push(search_result);
                         }
                         Err(err) => {
-                            eprintln!("Error processing url: {}", err);
+                            eprintln!("Error processing URL: {}", err);
                         }
                     }
                 }
             })
             .await;
 
-        let results = Arc::try_unwrap(results).unwrap().into_inner().unwrap();
+        let results = Arc::try_unwrap(results)
+            .expect("Arc still has multiple owners")
+            .into_inner()
+            .expect("Failed to acquire lock");
 
         Ok(results)
     }

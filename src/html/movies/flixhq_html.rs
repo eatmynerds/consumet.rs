@@ -5,55 +5,49 @@ use crate::{
 
 use visdom::{types::Elements, Vis};
 
-pub trait FlixHQHTML {
-    fn parse_recent_shows(&self, recent_html: String) -> Vec<Option<String>>;
-    fn parse_recent_movies(&self, recent_html: String) -> Vec<Option<String>>;
-    fn parse_trending_movies(&self, trending_html: String) -> Vec<Option<String>>;
-    fn parse_trending_shows(&self, trending_html: String) -> Vec<Option<String>>;
-    fn parse_search(&self, page_html: String) -> (Vec<Option<String>>, bool, usize);
-    fn single_page(&self, media_html: String, id: &str, url: String) -> FlixHQResult;
-    fn info_season(&self, season_html: String) -> Vec<String>;
-    fn info_episode(&self, episode_html: String, index: usize) -> Episodes;
-    fn info_server(&self, server_html: String, media_id: &str) -> Vec<FlixHQServer>;
+fn create_html_fragment(html: &str) -> Elements<'_> {
+    Vis::load(html).expect("Failed to load html")
+}
+
+pub(crate) trait FlixHQHTML {
+    fn parse_recent_shows(&self, html: &str) -> Vec<Option<String>>;
+    fn parse_recent_movies(&self, html: &str) -> Vec<Option<String>>;
+    fn parse_trending_movies(&self, html: &str) -> Vec<Option<String>>;
+    fn parse_trending_shows(&self, html: &str) -> Vec<Option<String>>;
+    fn parse_search(&self, html: &str) -> (Vec<String>, bool, usize);
+    fn single_page(&self, html: &str, id: &str, url: &str) -> FlixHQResult;
+    fn info_season(&self, html: &str) -> Vec<String>;
+    fn info_episode(&self, html: &str) -> EpisodesInfo;
+    fn info_server(&self, html: &str, media_id: &str) -> Vec<FlixHQServer>;
 }
 
 impl FlixHQHTML for FlixHQ {
-    fn parse_recent_shows(&self, recent_html: String) -> Vec<Option<String>> {
-        let fragment = create_html_fragment(&recent_html);
-
-        let trending_parser = Recent { elements: fragment };
+    fn parse_recent_shows(&self, html: &str) -> Vec<Option<String>> {
+        let trending_parser = Recent::new(html);
 
         trending_parser.recent_shows()
     }
 
-    fn parse_recent_movies(&self, recent_html: String) -> Vec<Option<String>> {
-        let fragment = create_html_fragment(&recent_html);
-
-        let trending_parser = Recent { elements: fragment };
+    fn parse_recent_movies(&self, html: &str) -> Vec<Option<String>> {
+        let trending_parser = Recent::new(html);
 
         trending_parser.recent_movies()
     }
 
-    fn parse_trending_movies(&self, trending_html: String) -> Vec<Option<String>> {
-        let fragment = create_html_fragment(&trending_html);
-
-        let trending_parser = Trending { elements: fragment };
+    fn parse_trending_movies(&self, html: &str) -> Vec<Option<String>> {
+        let trending_parser = Trending::new(html);
 
         trending_parser.trending_movies()
     }
 
-    fn parse_trending_shows(&self, trending_html: String) -> Vec<Option<String>> {
-        let fragment = create_html_fragment(&trending_html);
-
-        let trending_parser = Trending { elements: fragment };
+    fn parse_trending_shows(&self, html: &str) -> Vec<Option<String>> {
+        let trending_parser = Trending::new(html);
 
         trending_parser.trending_shows()
     }
 
-    fn parse_search(&self, page_html: String) -> (Vec<Option<String>>, bool, usize) {
-        let fragment = create_html_fragment(&page_html);
-
-        let page_parser = Page { elements: fragment };
+    fn parse_search(&self, html: &str) -> (Vec<String>, bool, usize) {
+        let page_parser = Page::new(html);
 
         (
             page_parser.page_ids(),
@@ -62,27 +56,20 @@ impl FlixHQHTML for FlixHQ {
         )
     }
 
-    fn single_page(&self, media_html: String, id: &str, url: String) -> FlixHQResult {
-        let fragment = create_html_fragment(&media_html);
+    fn single_page(&self, html: &str, id: &str, url: &str) -> FlixHQResult {
+        let search_parser = Search::new(html);
 
-        let search_parser = Search {
-            elements: &fragment,
-            id,
-        };
-
-        let info_parser = Info {
-            elements: &fragment,
-        };
+        let info_parser = Info::new(html);
 
         FlixHQResult {
             cover: search_parser.cover(),
             title: search_parser.title(),
-            url,
+            url: url.to_string(),
             image: search_parser.image(),
             country: info_parser.label(1, "Country:"),
             genres: info_parser.label(2, "Genre:"),
             release_date: info_parser.label(3, "Released:").join(""),
-            media_type: search_parser.media_type(),
+            media_type: search_parser.media_type(id),
             id: id.to_string(),
             description: info_parser.description(),
             quality: info_parser.quality(),
@@ -94,10 +81,8 @@ impl FlixHQHTML for FlixHQ {
         }
     }
 
-    fn info_season(&self, season_html: String) -> Vec<String> {
-        let fragment = create_html_fragment(&season_html);
-
-        let season_parser = Seasons { elements: fragment };
+    fn info_season(&self, html: &str) -> Vec<String> {
+        let season_parser = Seasons::new(html);
 
         season_parser
             .season_results()
@@ -106,37 +91,38 @@ impl FlixHQHTML for FlixHQ {
             .collect()
     }
 
-    fn info_episode(&self, episode_html: String, index: usize) -> Episodes {
-        let fragment = create_html_fragment(&episode_html);
+    fn info_episode(&self, html: &str) -> EpisodesInfo {
+        let episode_parser = EpisodesInfo::default();
 
-        Episodes::episode_results(fragment, BASE_URL, index)
+
+        episode_parser.episode_results(html)
     }
 
-    fn info_server(&self, server_html: String, media_id: &str) -> Vec<FlixHQServer> {
-        let fragment = create_html_fragment(&server_html);
+    fn info_server(&self, html: &str, media_id: &str) -> Vec<FlixHQServer> {
+        let server_parser = Server::new(html);
 
-        let server_parser = Server { element: fragment };
-
-        server_parser.parse_server_html(BASE_URL, media_id)
+        server_parser.parse_server_html(media_id)
     }
 }
 
-pub fn create_html_fragment(page_html: &str) -> Elements<'_> {
-    Vis::load(page_html).unwrap()
-}
-
-pub struct Page<'a> {
-    pub elements: Elements<'a>,
+struct Page<'a> {
+    elements: Elements<'a>,
 }
 
 impl<'a> Page<'a> {
-    pub fn has_next_page(&self) -> bool {
+    fn new(html: &'a str) -> Self {
+        let elements = create_html_fragment(html);
+
+        Self { elements }
+    }
+
+    fn has_next_page(&self) -> bool {
         self.elements
         .find("div.pre-pagination:nth-child(3) > nav:nth-child(1) > ul:nth-child(1) > li:nth-child(1)")
         .has_class("active")
     }
 
-    pub fn total_pages(&self) -> usize {
+    fn total_pages(&self) -> usize {
         let total_pages_attr = self.elements.find("div.pre-pagination:nth-child(3) > nav:nth-child(1) > ul:nth-child(1) > li.page-item:last-child a").attr("href");
 
         if let Some(total_pages) = total_pages_attr {
@@ -148,25 +134,30 @@ impl<'a> Page<'a> {
         1
     }
 
-    pub fn page_ids(&self) -> Vec<Option<String>> {
-        self.elements.find("div.film-poster > a").map(|_, element| {
-            element
-                .get_attribute("href")?
-                .to_string()
-                .strip_prefix('/')
-                .map(String::from)
-        })
+    fn page_ids(&self) -> Vec<String> {
+        self.elements
+            .find("div.film-poster > a")
+            .into_iter()
+            .filter_map(|element| {
+                element
+                    .get_attribute("href")
+                    .and_then(|href| href.to_string().strip_prefix('/').map(String::from))
+            })
+            .collect()
     }
 }
 
-#[derive(Clone, Copy)]
-pub struct Search<'page, 'b> {
-    pub elements: &'b Elements<'page>,
-    pub id: &'b str,
+struct Search<'b> {
+    elements: Elements<'b>,
 }
 
-impl<'page, 'b> Search<'page, 'b> {
-    pub fn image(&self) -> String {
+impl<'b> Search<'b> {
+    fn new(html: &'b str) -> Self {
+        let elements = create_html_fragment(html);
+        Self { elements }
+    }
+
+    fn image(&self) -> String {
         let image_attr = self
             .elements
             .find("div.m_i-d-poster > div > img")
@@ -179,7 +170,7 @@ impl<'page, 'b> Search<'page, 'b> {
         String::new()
     }
 
-    pub fn title(&self) -> String {
+    fn title(&self) -> String {
         self.elements
         .find(
             "#main-wrapper > div.movie_information > div > div.m_i-detail > div.m_i-d-content > h2",
@@ -189,7 +180,7 @@ impl<'page, 'b> Search<'page, 'b> {
         .to_owned()
     }
 
-    pub fn cover(&self) -> String {
+    fn cover(&self) -> String {
         let cover_attr = self.elements.find("div.w_b-cover").attr("style");
         if let Some(cover) = cover_attr {
             return cover
@@ -201,8 +192,8 @@ impl<'page, 'b> Search<'page, 'b> {
         String::new()
     }
 
-    pub fn media_type(&self) -> TvType {
-        match self.id.split('/').next() {
+    fn media_type(&self, id: &str) -> TvType {
+        match id.split('/').next() {
             Some("tv") => TvType::TvSeries,
             Some("movie") => TvType::Movie,
             _ => todo!(),
@@ -210,14 +201,18 @@ impl<'page, 'b> Search<'page, 'b> {
     }
 }
 
-/// Remy clarke was here & some red guy
-#[derive(Clone, Copy)]
-pub struct Info<'page, 'b> {
-    pub elements: &'b Elements<'page>,
+struct Info<'b> {
+    elements: Elements<'b>,
 }
 
-impl<'page, 'b> Info<'page, 'b> {
-    pub fn label(&self, index: usize, label: &str) -> Vec<String> {
+impl<'b> Info<'b> {
+    fn new(html: &'b str) -> Self {
+        let elements = create_html_fragment(html);
+
+        Self { elements }
+    }
+
+    fn label(&self, index: usize, label: &str) -> Vec<String> {
         self.elements
             .find(&format!(
                 "div.m_i-d-content > div.elements > div:nth-child({})",
@@ -230,11 +225,11 @@ impl<'page, 'b> Info<'page, 'b> {
             .collect()
     }
 
-    pub fn description(&self) -> String {
+    fn description(&self) -> String {
         self.elements.find("#main-wrapper > div.movie_information > div > div.m_i-detail > div.m_i-d-content > div.description").text().trim().to_owned()
     }
 
-    pub fn quality(&self) -> String {
+    fn quality(&self) -> String {
         self.elements
             .find("span.item:nth-child(1)")
             .text()
@@ -242,7 +237,7 @@ impl<'page, 'b> Info<'page, 'b> {
             .to_owned()
     }
 
-    pub fn rating(&self) -> String {
+    fn rating(&self) -> String {
         self.elements
             .find("span.item:nth-child(2)")
             .text()
@@ -250,7 +245,7 @@ impl<'page, 'b> Info<'page, 'b> {
             .to_owned()
     }
 
-    pub fn duration(&self) -> String {
+    fn duration(&self) -> String {
         self.elements
             .find("span.item:nth-child(3)")
             .text()
@@ -259,12 +254,39 @@ impl<'page, 'b> Info<'page, 'b> {
     }
 }
 
-pub struct Episodes {
-    pub episodes: Vec<FlixHQEpisode>,
-    pub index: usize,
+
+
+struct Seasons<'a> {
+    elements: Elements<'a>,
 }
 
-impl Iterator for Episodes {
+impl<'a> Seasons<'a> {
+    fn new(html: &'a str) -> Self {
+        let elements = create_html_fragment(html);
+
+        Self { elements }
+    }
+
+    fn season_results(&self) -> Vec<Option<String>> {
+        self.elements.find(".dropdown-menu > a").map(|_, element| {
+            element
+                .get_attribute("data-id")
+                .map(|value| value.to_string())
+        })
+    }
+}
+
+pub struct Episodes<'a> {
+    elements: Elements<'a>,
+}
+
+#[derive(Default)]
+pub struct EpisodesInfo {
+    pub episodes: Vec<FlixHQEpisode>,
+    index: usize,
+}
+
+impl Iterator for EpisodesInfo {
     type Item = FlixHQEpisode;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -278,33 +300,41 @@ impl Iterator for Episodes {
     }
 }
 
-impl Episodes {
-    pub fn episode_title(fragment: &Elements<'_>) -> Vec<Option<String>> {
-        fragment.find("ul > li > a").map(|_, element| {
+impl<'a> Episodes<'a> {
+    fn new(html: &'a str) -> Self {
+        let elements = create_html_fragment(html);
+        Self { elements }
+    }
+
+    fn episode_title(&self) -> Vec<Option<String>> {
+        self.elements.find("ul > li > a").map(|_, element| {
             element
                 .get_attribute("title")
                 .map(|value| value.to_string())
         })
     }
 
-    pub fn episode_id(fragment: &Elements<'_>) -> Vec<Option<String>> {
-        fragment.find("ul > li > a").map(|_, element| {
+    fn episode_id(&self) -> Vec<Option<String>> {
+        self.elements.find("ul > li > a").map(|_, element| {
             element
                 .get_attribute("data-id")
                 .map(|value| value.to_string())
         })
     }
+}
 
-    pub fn episode_results(fragment: Elements<'_>, base_url: &str, _i: usize) -> Self {
-        let episode_titles = Self::episode_title(&fragment);
-        let episode_ids = Self::episode_id(&fragment);
+impl EpisodesInfo {
+    fn episode_results(&self, html: &str) -> EpisodesInfo {
+        let episode_info_parser = Episodes::new(html);
+        let episode_titles = episode_info_parser.episode_title();
+        let episode_ids = episode_info_parser.episode_id();
 
         let episode: Vec<FlixHQEpisode> = episode_ids
             .iter()
             .zip(episode_titles.iter())
             .flat_map(|(id, title)| id.as_ref().map(|id| (id, title)))
             .map(|(id, title)| {
-                let url = format!("{}/ajax/v2/episode/servers/{}", base_url, id);
+                let url = format!("{}/ajax/v2/episode/servers/{}", BASE_URL, id);
                 FlixHQEpisode {
                     id: id.clone(),
                     title: title.clone().unwrap_or(String::from("")),
@@ -313,34 +343,26 @@ impl Episodes {
             })
             .collect();
 
-        Self {
+        EpisodesInfo {
             episodes: episode,
             index: 0,
         }
     }
 }
 
-pub struct Seasons<'a> {
-    pub elements: Elements<'a>,
-}
-
-impl<'a> Seasons<'a> {
-    pub fn season_results(&self) -> Vec<Option<String>> {
-        self.elements.find(".dropdown-menu > a").map(|_, element| {
-            element
-                .get_attribute("data-id")
-                .map(|value| value.to_string())
-        })
-    }
-}
-
-pub struct Server<'a> {
-    pub element: Elements<'a>,
+struct Server<'a> {
+    elements: Elements<'a>,
 }
 
 impl<'a> Server<'a> {
-    pub fn parse_server_html(&self, base_url: &str, media_id: &str) -> Vec<FlixHQServer> {
-        self.element.find("ul > li > a").map(|_, element| {
+    fn new(html: &'a str) -> Self {
+        let elements = create_html_fragment(html);
+
+        Self { elements }
+    }
+
+    fn parse_server_html(&self, media_id: &str) -> Vec<FlixHQServer> {
+        self.elements.find("ul > li > a").map(|_, element| {
             let id = element
                 .get_attribute("id")
                 .map(|value| value.to_string().replace("watch-", ""))
@@ -350,7 +372,7 @@ impl<'a> Server<'a> {
                 .get_attribute("title")
                 .map(|value| value.to_string().trim_start_matches("Server ").to_owned());
 
-            let url = format!("{}/watch-{}.{}", base_url, media_id, id);
+            let url = format!("{}/watch-{}.{}", BASE_URL, media_id, id);
             let name = name.unwrap_or(String::from(""));
 
             FlixHQServer { name, url }
@@ -358,12 +380,18 @@ impl<'a> Server<'a> {
     }
 }
 
-pub struct Recent<'a> {
-    pub elements: Elements<'a>,
+struct Recent<'a> {
+    elements: Elements<'a>,
 }
 
 impl<'a> Recent<'a> {
-    pub fn recent_movies(&self) -> Vec<Option<String>> {
+    fn new(html: &'a str) -> Self {
+        let elements = create_html_fragment(html);
+
+        Self { elements }
+    }
+
+    fn recent_movies(&self) -> Vec<Option<String>> {
         self.elements.find("#main-wrapper > div > section:nth-child(6) > div.block_area-content.block_area-list.film_list.film_list-grid > div > div.flw-item > div.film-poster > a").map(|_, element| {
             element
                 .get_attribute("href")?
@@ -373,7 +401,7 @@ impl<'a> Recent<'a> {
         })
     }
 
-    pub fn recent_shows(&self) -> Vec<Option<String>> {
+    fn recent_shows(&self) -> Vec<Option<String>> {
         self.elements.find("#main-wrapper > div > section:nth-child(7) > div.block_area-content.block_area-list.film_list.film_list-grid > div > div.flw-item > div.film-poster > a").map(|_, element| {
             element
                  .get_attribute("href")?
@@ -385,12 +413,17 @@ impl<'a> Recent<'a> {
     }
 }
 
-pub struct Trending<'a> {
-    pub elements: Elements<'a>,
+struct Trending<'a> {
+    elements: Elements<'a>,
 }
 
 impl<'a> Trending<'a> {
-    pub fn trending_movies(&self) -> Vec<Option<String>> {
+    fn new(html: &'a str) -> Self {
+        let elements = create_html_fragment(html);
+        Self { elements }
+    }
+
+    fn trending_movies(&self) -> Vec<Option<String>> {
         self.elements
             .find("div#trending-movies div.film_list-wrap div.flw-item div.film-poster a")
             .map(|_, element| {
@@ -402,7 +435,7 @@ impl<'a> Trending<'a> {
             })
     }
 
-    pub fn trending_shows(&self) -> Vec<Option<String>> {
+    fn trending_shows(&self) -> Vec<Option<String>> {
         self.elements
             .find("div#trending-tv div.film_list-wrap div.flw-item div.film-poster a")
             .map(|_, element| {

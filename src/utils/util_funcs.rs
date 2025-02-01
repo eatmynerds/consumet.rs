@@ -1,4 +1,4 @@
-use chrono::{DateTime, Datelike, Local, NaiveDateTime, TimeZone, Utc};
+use chrono::{DateTime, Datelike, Local, TimeZone, Utc};
 
 /// The User-Agent used in HTTP requests in some parser implmentations
 /// ```
@@ -172,8 +172,8 @@ pub fn get_days(days: Vec<Days>) -> Vec<i64> {
 /// ```
 pub fn convert_duration(milliseconds: i64) -> String {
     let timestamp = milliseconds * 1000;
-    let native = NaiveDateTime::from_timestamp_opt(timestamp, 0).unwrap();
-    let datetime: DateTime<Utc> = Utc.from_utc_datetime(&native);
+    let native = DateTime::from_timestamp(timestamp, 0).unwrap();
+    let datetime: DateTime<Utc> = Utc.from_utc_datetime(&native.naive_utc());
     datetime.format("PT%HH%MM%SS").to_string()
 }
 
