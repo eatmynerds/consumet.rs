@@ -353,7 +353,7 @@ impl FlixHQ {
         server: Option<StreamingServers>,
     ) -> anyhow::Result<FlixHQSources> {
         let server: StreamingServers = server.unwrap_or(StreamingServers::UpCloud);
-        let servers = self.servers(episode_id, media_id).await?;
+                let servers = self.servers(episode_id, media_id).await?;
 
         let i = match servers
             .servers
@@ -374,7 +374,7 @@ impl FlixHQ {
             .unwrap_or_default();
 
         let server_json = CLIENT
-            .get(format!("{}/ajax/get_link/{}", BASE_URL, server_id))
+            .get(format!("{}/ajax/episode/sources/{}", BASE_URL, server_id))
             .send()
             .await?
             .text()
