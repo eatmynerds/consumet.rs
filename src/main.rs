@@ -1,5 +1,4 @@
 use consumet::providers::movies;
-use std::process::Command;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {

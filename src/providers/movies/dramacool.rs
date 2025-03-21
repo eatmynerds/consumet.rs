@@ -88,19 +88,25 @@ impl DramaCool {
                             let url = &urls[index];
                             let id = url.splitn(4, "/").collect::<Vec<&str>>()[3];
 
-                            let result = self.single_page(&text, id, url);
+                            let search_result = self.single_page(&text, id, url);
 
-                            results.lock().unwrap().push(result);
+                            results
+                                .lock()
+                                .expect("Failed to lock mutex")
+                                .push(search_result);
                         }
                         Err(err) => {
-                            eprintln!("Error processing url: {}", err);
+                            eprintln!("Error processing  RL: {}", err);
                         }
                     }
                 }
             })
             .await;
 
-        let results = Arc::try_unwrap(results).unwrap().into_inner().unwrap();
+        let results = Arc::try_unwrap(results)
+            .expect("Arc still has multiple owners")
+            .into_inner()
+            .expect("Failed to acquire lock");
 
         Ok(DramaCoolSearchResults {
             current_page,
