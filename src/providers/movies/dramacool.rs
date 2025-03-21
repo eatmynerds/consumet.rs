@@ -1,6 +1,6 @@
 use crate::{html::movies::dramacool_html::DramaCoolHTML, CLIENT};
 
-use futures::{stream, StreamExt};
+use futures::{stream::FuturesUnordered, StreamExt};
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 
@@ -47,30 +47,39 @@ impl DramaCool {
             .text()
             .await?;
 
-        let (ids, has_next_page, total_pages) = self.parse_search(page_html);
-        let mut urls = vec![];
+        let (ids, has_next_page, total_pages) = self.parse_search(&page_html);
 
-        for id in ids.iter().flatten() {
-            let url = format!("{}/{}", BASE_URL, id);
-            urls.push(url);
-        }
+        let urls: Arc<Vec<String>> = Arc::new(
+            ids.iter()
+                .map(|id| format!("{}/{}", BASE_URL, id))
+                .collect(),
+        );
 
-        let bodies = stream::iter(urls.clone())
+        let bodies = urls
+            .iter()
             .enumerate()
             .map(|(index, url)| {
                 let client = &CLIENT;
+
                 async move {
-                    let resp = client.get(url).send().await?;
-                    resp.text().await.map(|text| (index, text))
+                    let resp = client.get(url).send().await;
+                    match resp {
+                        Ok(response) => {
+                            let text = response.text().await;
+                            text.map(|body| (index, body))
+                                .map_err(|e| format!("Failed to fetch body: {}", e))
+                        }
+                        Err(e) => Err(format!("Failed to fetch URL: {}", e)),
+                    }
                 }
             })
-            .buffer_unordered(urls.len());
+            .collect::<FuturesUnordered<_>>();
 
         let results: Arc<Mutex<Vec<DramaCoolResult>>> = Arc::new(Mutex::new(vec![]));
 
         bodies
             .for_each(|result| {
-                let urls = urls.clone();
+                let urls = Arc::clone(&urls);
                 let results = Arc::clone(&results);
 
                 async move {
@@ -79,7 +88,7 @@ impl DramaCool {
                             let url = &urls[index];
                             let id = url.splitn(4, "/").collect::<Vec<&str>>()[3];
 
-                            let result = self.single_page(text, id, url.to_string());
+                            let result = self.single_page(&text, id, url);
 
                             results.lock().unwrap().push(result);
                         }
